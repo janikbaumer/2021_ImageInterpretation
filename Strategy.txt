@@ -1,0 +1,38 @@
+Lab 1 - Classification
+Note: Use .py python file (no notebooks)
+
+Tasks
+
+Pre-processing
+-Loading data, organizinig, pre-processing
+-Establish ground truth (labels)
+-Reject, ignore "no data = 99"
+-Stratified sampling, selecting representative subsamples from multiple images
+-Perform training on samples and later try on master data set
+-Window size
+
+Training (decide how much data to allocate to training and validation)
+
+Validation (perhaps apply cross-validation)
+
+Testing
+-At the end
+
+Hints
+-Start simple with stupid baseline reference and keep developing/improving (worst possible classifier)
+-Eg. random guess, followed by majority guess, then move on to pixelwise approaches (white = cloud, green = tree, etc)
+-Maybe try NDVI with 
+-Compare each with the baseline
+-Develop a confusion matrix and then derive statistics and metrics
+-Examples: accuracy, precision, recall, etc.
+
+Libraries and installation
+-Conda
+-Scikit-learn
+-PyTorch
+-XGBoost, LightGBM
+-Catboost?
+
+Reporting & Presentation
+-Discuss with other groups
+-See city scape	
