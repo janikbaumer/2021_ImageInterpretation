@@ -24,6 +24,9 @@ A matric quantifiying truths and predicitons. Overview of false-positives, false
 ### Precision-Recall
 Calculate the two metrics from the confusion matrix, based on retrieved and relevant instances. (THIS SECTION NEEDS FLESHING OUT)
 
+### ROC curve (Reciever Operator Call)
+Useful for visually comparing different methods. Plots the methods true-positive rate versus false-positive rate. The area underneath the curve is the accuracy, which a maximum accuracy of 1 possible. The closer the curve is to the diagonal, the less accurate it is.
+
 
 ## Sources
 Overview article: https://towardsdatascience.com/machine-learning-classifiers-a5cc4e1b0623
