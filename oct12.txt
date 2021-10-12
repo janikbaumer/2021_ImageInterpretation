@@ -1,0 +1,18 @@
+Oct. 12 Meeting
+
+
+Potential classifiers (supervised learning on a pixel basis)
+-K nearest neighbour with varying k (compare)
+-Decision trees
+-Random forests
+-SVM
+
+Potential metrices
+-Accuracy *maybe not so good -> try normalizing, better for classes of the same size
+-Precision
+-Recall
+-F1 score
+
+
+Libraries
+-scikit learn
