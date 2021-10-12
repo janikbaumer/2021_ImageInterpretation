@@ -16,3 +16,11 @@ Potential metrices
 
 Libraries
 -scikit learn
+
+
+Input training data
+Preprocessing
+Learn an algorithm (see above) -> Training
+Validation
+Testing
+Compare different conventional methods (classifiers), produce a confusion matrix for each
