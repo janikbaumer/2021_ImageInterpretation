@@ -4,7 +4,7 @@ Note: Use .py python file (no notebooks)
 Tasks
 
 Pre-processing
--Loading data, organizinig, pre-processing
+-Loading data, organizing, pre-processing
 -Establish ground truth (labels)
 -Reject, ignore "no data = 99"
 -Stratified sampling, selecting representative subsamples from multiple images
