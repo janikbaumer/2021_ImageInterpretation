@@ -8,6 +8,7 @@ Potential classifiers (supervised learning on a pixel basis)
 -SVM
 
 Potential metrices
+-First, we need true positives, false positives, true negatives, and false negatives
 -Accuracy *maybe not so good -> try normalizing, better for classes of the same size
 -Precision
 -Recall
@@ -23,4 +24,7 @@ Preprocessing
 Learn an algorithm (see above) -> Training
 Validation
 Testing
-Compare different conventional methods (classifiers), produce a confusion matrix for each
+Compare different conventional methods (classifiers), produce a confusion matrix for each (Evaluation)
+Plot ROC curves and learning curves for visualization
+
+
