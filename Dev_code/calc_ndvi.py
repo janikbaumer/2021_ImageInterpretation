@@ -11,6 +11,7 @@ def calc_NDVI(NIR, RED):
     This function takes the NIR and RED channels of an image and returns the NDVI index. 
     Make sure to pass the parameters are matrices of exactly 2 dimensions.
     Also, important that zero divisions are handled properly.
+    One solution, use following setting: np.seterr(divide='ignore', invalid='ignore')
 
     Parameters
     ----------
