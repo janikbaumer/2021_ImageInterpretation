@@ -5,7 +5,7 @@ import numpy as np
 
 class SatelliteSet(VisionDataset):
 
-    def __init__(self, root="dataset_train.h5", windowsize=128,test=False):
+    def __init__(self, root="../datasets/dataset_train.h5", windowsize=128,test=False):
 
         super().__init__(root)
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     import torch
 
     # create dataset
-    dset = SatelliteSet(root="dataset_test.h5", windowsize = 512,test=False)
+    dset = SatelliteSet(root="../datasets/dataset_test.h5", windowsize = 512,test=False)
 
     # create dataloader that samples batches from the dataset
     train_loader = torch.utils.data.DataLoader(dset,
