@@ -80,13 +80,13 @@ class SatelliteSet(VisionDataset):
 
 if __name__ == "__main__":
     colormap = [[47, 79, 79], [0, 255, 0], [255, 255, 255], [0, 0, 0]]
-    colormap = np.asarray(colormap)
+    colormap = np.asarray(colormap) # convert list of lists to numpy array
     import matplotlib.pyplot as plt
     from tqdm import tqdm
     import torch
 
     # create dataset
-    dset = SatelliteSet(root="../datasets/dataset_test.h5", windowsize = 512,test=False)
+    dset = SatelliteSet(root="../datasets/dataset_train_devel.h5", windowsize=512,test=False)
 
     # create dataloader that samples batches from the dataset
     train_loader = torch.utils.data.DataLoader(dset,
