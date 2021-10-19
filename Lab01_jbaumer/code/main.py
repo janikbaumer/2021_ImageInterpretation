@@ -173,6 +173,7 @@ if __name__ == "__main__":
     for x, y in tqdm(train_loader):
         counter += 1
 
+        # because pytorch originally wanted the data channel first
         x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
         y = np.where(y == 99, 3, y)  # change no data (99) to 3, for plotting reasons
         x = x.numpy()  # y is ndarray, x not yet - convert x from pytorch tensor to ndarray
@@ -196,7 +197,13 @@ if __name__ == "__main__":
                 x_batch_chn.resize(x_shape[0]*x_shape[1], 1)
                 x_shape_resized = x_batch_chn.shape
                 X_lst.append(x_batch_chn)
-            X_train = np.array(X_lst).T[0]
+            X_train = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
+
+            y_batch.resize(y_shape[0]*y_shape[1], 1)
+            Y_lst = []
+            Y_lst.append(y_batch)
+            Y_train = np.array(Y_lst).T[0]
+            print()
 
             # for plotting
             #axarr[i, 0].imshow(x[i, :, :, :3])  # first column: RGB
@@ -208,7 +215,6 @@ if __name__ == "__main__":
         # quit()
     print('cnt (looped over train_loader) = ', counter, 'times')
 
-#x[0,:,:,-1].shape#__getitem__(0).shape # pytorch wants the data channel first - you might have to change this
 '''
 #Gain access to the data.
 #Note: This does *not* load the entire data set into memory.
