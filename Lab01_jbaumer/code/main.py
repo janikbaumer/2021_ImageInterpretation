@@ -159,17 +159,27 @@ if __name__ == "__main__":
     dset_val = SatelliteSet(root=FILE_VAL, windowsize=128, test=True)
     dset_test = SatelliteSet(root=FILE_TEST, windowsize=128, test=True)
 
+    # create dataloader that samples batches from the dataset
+    train_loader = torch.utils.data.DataLoader(dset_train,
+                                               batch_size=8,
+                                               num_workers=8,
+                                               shuffle=False)
 
-    # 
+    test_loader = torch.utils.data.DataLoader(dset_test,
+                                               batch_size=8,
+                                               num_workers=8,
+                                               shuffle=False)
+
+    val_loader = torch.utils.data.DataLoader(dset_val,
+                                             batch_size=8,
+                                             num_workers=8,
+                                             shuffle=False)
+
     for x,y in tqdm(dset):
         print('globi')
         pass
 
-    # create dataloader that samples batches from the dataset
-    #train_loader = torch.utils.data.DataLoader(dset,
-    #                                           batch_size=8,
-    #                                           num_workers=8,
-    #                                           shuffle=False)
+
 
     # Please note that random shuffling (shuffle=True) -> random access.
     # this is slower than sequential reading (shuffle=False)
