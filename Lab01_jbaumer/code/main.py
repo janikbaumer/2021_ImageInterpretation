@@ -5,12 +5,19 @@ import h5py
 import torch
 from tqdm import tqdm
 from torchvision.datasets.vision import VisionDataset
+from sklearn.model_selection import train_test_split
+from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import confusion_matrix
+from sklearn import metrics
+
 
 
 ### CLASSES
 
 class SatelliteSet(VisionDataset):
 
+    # test flag: whether data is loaded completely into memory
     def __init__(self, root="../datasets/dataset_train.h5", windowsize=128,test=False):
 
         super().__init__(root)
@@ -87,7 +94,7 @@ class SatelliteSet(VisionDataset):
 
 ### FUNCTIONS
 
-# todo ev superfluous
+# todo ev superfluous, delete
 def create_label(CLD,GT,input_image):
 
     # first img - use index 0
@@ -126,7 +133,7 @@ def create_label(CLD,GT,input_image):
 
     return label_image
 
-# todo ev superfluous
+# todo ev superfluous, delete
 def create_features():
     pass
 
@@ -134,27 +141,35 @@ def create_features():
 ### VARIABLES
 
 # for real training, change FILE_TRAIN to ../datasets/dataset_train.h5
-FILE_TRAIN = '../datasets/dataset_train_devel.h5'
+FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
+FILE_VAL = '../datasets/dataset_val.h5'
 FILE_TEST = '../datasets/dataset_test.h5'
 
 
-
-
-
 if __name__ == "__main__":
-
-    # for imshow (labels) 0: green/blue-ish | 1:
+    '''
+    # for plotting
+    # for imshow (labels) 0: green/blue-ish (background) | 1: green (palm-oil tree) | 2: white (cloud) | 3: black (no data)
     colormap = [[47, 79, 79], [0, 255, 0], [255, 255, 255], [0, 0, 0]]
     colormap = np.asarray(colormap)  # convert list of lists to numpy array
+    '''
 
-    # create dataset
-    dset = SatelliteSet(root="../datasets/dataset_train_devel.h5", windowsize=512,test=False)
+    # create datasets
+    dset_train = SatelliteSet(root=FILE_TRAIN, windowsize=10980, test=False)
+    dset_val = SatelliteSet(root=FILE_VAL, windowsize=128, test=True)
+    dset_test = SatelliteSet(root=FILE_TEST, windowsize=128, test=True)
+
+
+    # 
+    for x,y in tqdm(dset):
+        print('globi')
+        pass
 
     # create dataloader that samples batches from the dataset
-    train_loader = torch.utils.data.DataLoader(dset,
-                                               batch_size=2,
-                                               num_workers=8,
-                                               shuffle=True)
+    #train_loader = torch.utils.data.DataLoader(dset,
+    #                                           batch_size=8,
+    #                                           num_workers=8,
+    #                                           shuffle=False)
 
     # Please note that random shuffling (shuffle=True) -> random access.
     # this is slower than sequential reading (shuffle=False)
@@ -166,17 +181,22 @@ if __name__ == "__main__":
     # for plotting
     #f, axarr = plt.subplots(ncols=3, nrows=8)
 
+    # for averaging confusion matrix
     counter = 0
 
-    # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable),
+'''
     # loop over all batches
-    for x, y in tqdm(train_loader):
+    for x, y in tqdm(train_loader): # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable)
+        # for averaging confusion matrix
         counter += 1
 
-        # because pytorch originally wanted the data channel first
+        # since pytorch originally wanted the data channel first
         x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
-        y = np.where(y == 99, 3, y)  # change no data (99) to 3, for plotting reasons
-        x = x.numpy()  # y is ndarray, x not yet - convert x from pytorch tensor to ndarray
+        x = x.numpy()  #  x is not yet ndarray - convert x from pytorch tensor to ndarray
+
+        # change no data (99) to 3, for plotting reasons
+        y = np.where(y == 99, 3, y)  # y is already ndarry
+
 
         # loop over batch size of train_loader ((all images in this batch (?))
         for i in range(len(x)):
@@ -187,8 +207,12 @@ if __name__ == "__main__":
             x_shape = x_batch.shape
             y_shape = y_batch.shape
 
+            # initialize lists in which features / labels are stored
             X_lst = []
+            Y_lst = []
 
+
+            ##### todo CONTINUE HERE REFACTORING CODE
             # create feature matrix X_train (can be used for ML model later)
             # for each channel, stack features (e.g. R,G,B,NIR intensities) to column vector
 
@@ -197,13 +221,48 @@ if __name__ == "__main__":
                 x_batch_chn.resize(x_shape[0]*x_shape[1], 1)
                 x_shape_resized = x_batch_chn.shape
                 X_lst.append(x_batch_chn)
-            X_train = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
 
             y_batch.resize(y_shape[0]*y_shape[1], 1)
-            Y_lst = []
             Y_lst.append(y_batch)
-            Y_train = np.array(Y_lst).T[0]
+
+            # define feature matrix and label vector
+            X_train = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
+            Y_train = np.array(Y_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
             print()
+
+
+
+
+            # Split dataset into training set and test set
+            X_train, X_val, y_train, y_val = train_test_split(X_train, Y_train, test_size=0.2,
+                                                                random_state=42)  # 80% training and 20% test
+
+            # Train the model using the training sets
+
+            #clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train.ravel())
+            #clf.score(X_val, y_val)
+
+            #clf.fit(X_train, y_train)
+
+            # Predict the response for test dataset
+            #y_pred = clf.predict(X_val)
+
+            # Naive Bayes:
+            gnb = GaussianNB()
+            y_pred = gnb.fit(X_train, y_train).predict(X_val)
+            print(f"Number of mislabeled points out of "
+                  f"a total {X_val.shape[0]} points : {(y_val != y_pred).sum()}")
+
+
+
+            # confusion matrix
+            # truth: vertical axis / predicted: horizontal axis
+            try:
+                conf_mat = conf_mat + confusion_matrix(y_val, y_pred, labels=[0,1,2,3]) # labels 0 = background, 1 = palm oil, 2 = clouds and 3 = no data
+            except NameError:
+                conf_mat = np.zeros((4,4))
+
+            print('Confusion matrix: \n', conf_mat)
 
             # for plotting
             #axarr[i, 0].imshow(x[i, :, :, :3])  # first column: RGB
@@ -211,9 +270,35 @@ if __name__ == "__main__":
             #axarr[i, 2].imshow(colormap[y[i]] / 255)  # third column:
             #plt.show()
 
+        # for plotting
         #plt.show()
         # quit()
-    print('cnt (looped over train_loader) = ', counter, 'times')
+
+    print(f'\ncnt (looped over train_loader) = {counter} times')
+    print('AVG confusion matrix: \n', conf_mat/counter)
+
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 '''
 #Gain access to the data.
