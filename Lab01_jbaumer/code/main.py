@@ -12,8 +12,7 @@ from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import confusion_matrix
 from sklearn import metrics
-
-
+from sklearn.metrics import f1_score, cohen_kappa_score
 
 ### CLASSES
 
@@ -123,43 +122,33 @@ if __name__ == "__main__":
     # create dataloader that samples batches from the dataset
     train_loader = DataLoader(dset_train,
                               batch_size=8,
-                              num_workers=8,
+                              num_workers=0,
                               shuffle=False)
 
     val_loader = DataLoader(dset_val,
-                            batch_size=8,
-                            num_workers=8,
+                            batch_size=4,
+                            num_workers=0,
                             shuffle=False)
 
     test_loader = DataLoader(dset_test,
                              batch_size=8,
-                             num_workers=8,
+                             num_workers=0,
                              shuffle=False)
 
 
     # create initialization of certain ML model
 
-    ## SVC
-    # clf = svm.SVC(kernel='linear', C=1)
-
     ## Naive Bayes:
     gnb = GaussianNB()
 
 
-
-
-
-    #print(f"Number of mislabeled points out of "
-    #      f"a total {X_val.shape[0]} points : {(y_val != y_pred).sum()}")
-
-#    for x,y in tqdm(dset_train):
-#        print('globi')
-#        pass
-
-
-    print('TRAINING STARTING')
+    print('TRAINING STARTING ...')
 
     train_loader_loop = 0
+
+#    for x_tr, y_tr in tqdm(train_loader):
+#        pass
+
     for x, y in tqdm(train_loader): # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable)
         train_loader_loop += 1
         x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
@@ -198,64 +187,99 @@ if __name__ == "__main__":
             X_train = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
             Y_train = np.array(Y_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
-            # train model
 
-            ## SVC
-            # clf.fit(X_train, Y_train)
+            # train model
 
             ## Naive Bayes
             gnb.fit(X_train, Y_train)
 
+    # HERE gnb IS COMPLETELY TRAINED
 
 
-            print()
+    # todo
+    # for validation, take full imgs of validations dsets - we anyway take subsamples (128 pxl)
+    # predict with gnb model (this case)
+    # compare prediction to GT of validation dsets
+    # compute confusion matrix per batch, then aggregate to get CM_full
+
+    # based confusion matrices, different models can be compared - use best one on test dset
 
 
 
-    print('VALIDATION STARTING')
 
-    val_loader_loop = 0
-    # at this point, all subsamples have been gone through the training process of the image
-    for x, y in tqdm(val_loader):
-        val_loader_loop += 1
-        x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
-        x = x.numpy()  #  x is not yet ndarray - convert x from pytorch tensor to ndarray
+    print('VALIDATION STARTING ...')
+
+    iterator_val = 0
+    f1_full = 0
+    kappa_full = 0
+    CM_full = np.zeros((4,4))
+    for x_va, y_va in tqdm(val_loader): # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
+        iterator_val += 1
+        x_va = np.transpose(x_va, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
+        x_va = x_va.numpy()  # x is not yet ndarray - convert x from pytorch tensor to ndarray
 
         # change no data (99) to (3), for plotting reasons
-        y = np.where(y == 99, 3, y)  # y is already ndarry
+        y_va = np.where(y_va == 99, 3, y_va)  # y is already ndarry
 
 
         # loop over batch size of train_loader ((all images in this batch (?))
-        for i in range(len(x)):
-            print(f'training with image {i} of {len(x)} of train loader loop no: {train_loader_loop}')
-            x_batch = x[i]
-            y_batch = y[i]
+        for i in range(len(x_va)):
+            # print(f'training with image {i} of {len(x_va)} of train loader loop no: {train_loader_loop}')
+            x_va_batch = x_va[i]
+            y_va_batch = y_va[i]
 
             # define shapes
-            x_shape = x_batch.shape
-            y_shape = y_batch.shape
+            x_va_shape = x_va_batch.shape
+            y_va_shape = y_va_batch.shape
 
             # initialize lists in which features / labels are stored
-            X_lst = []
-            Y_lst = []
+            X_val_lst = []
+            Y_val_lst = []
 
             # create feature matrix X_train (can be used for ML model later)
             # for each channel, stack features (e.g. R,G,B,NIR intensities) to column vector
-            for chn in range(x_shape[-1]):
-                x_batch_chn = x_batch[:,:,chn]
-                x_batch_chn.resize(x_shape[0]*x_shape[1], 1)
-                x_shape_resized = x_batch_chn.shape
-                X_lst.append(x_batch_chn)
+            for chn in range(x_va_shape[-1]):
+                x_va_batch_chn = x_va_batch[:,:,chn]
+                x_va_batch_chn.resize(x_va_shape[0]*x_va_shape[1], 1)
+                x_va_shape_resized = x_va_batch_chn.shape
+                X_val_lst.append(x_va_batch_chn)
 
-            y_batch.resize(y_shape[0]*y_shape[1], 1)
-            Y_lst.append(y_batch)
+            y_va_batch.resize(y_va_shape[0]*y_va_shape[1], 1)
+            Y_val_lst.append(y_va_batch)
+
 
             # define feature matrix and label vector
-            X_val = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
-            Y_val = np.array(Y_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
+            X_val = np.array(X_val_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
+            Y_val = np.array(Y_val_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
+
+            Y_pred = gnb.predict(X_val)
+
+            cm = confusion_matrix(Y_val, Y_pred, labels=[0, 1, 2, 3])
+            #print('cm: \n', cm)
+            CM_full = CM_full + cm
+
+            # compute f1-score for each batch
+            #f1 = f1_score(Y_val, Y_pred)
+            #f1_full += f1
+            #print()
+
+            # kappa
+            #kappa = cohen_kappa_score(Y_val, Y_pred)
+            #kappa_full += kappa
+            #print('CM full: \n', CM_full)
+            #print()
 
 
-            ### todo: with these X_val, Y_val, the model can be evaulated, (ev with confusion matrix???)
+    print('complete confusion matrix: ', CM_full)
+    print()
+
+    # EV add multiple different scores for model evaluation
+
+    # average f1 scores, kappa
+    #f1_avg = f1_full / iterator_val
+    #kappa_avg = kappa_full / iterator_val
+
+
 
 
 
@@ -269,191 +293,43 @@ if __name__ == "__main__":
     # for plotting
     #f, axarr = plt.subplots(ncols=3, nrows=8)
 
-    # for averaging confusion matrix
 
-'''
-#    # loop over all batches
-#    for x, y in tqdm(train_loader): # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable)
-#        # for averaging confusion matrix
-#        counter += 1
 
-#        # since pytorch originally wanted the data channel first
-#        x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
-#        x = x.numpy()  #  x is not yet ndarray - convert x from pytorch tensor to ndarray
 
-#        # change no data (99) to 3, for plotting reasons
-#        y = np.where(y == 99, 3, y)  # y is already ndarry
 
 
-#        # loop over batch size of train_loader ((all images in this batch (?))
-#        for i in range(len(x)):
-#            x_batch = x[i]
-#            y_batch = y[i]
+#### discussion with other groups
 
-#            # define shapes
-#            x_shape = x_batch.shape
-#            y_shape = y_batch.shape
+# models
 
-#            # initialize lists in which features / labels are stored
-#            X_lst = []
-#            Y_lst = []
+# KNN
+# Decision tree
+# rdm forest
+# SVM
+# naive bayes
 
 
-#            ##### todo CONTINUE HERE REFACTORING CODE
-#            # create feature matrix X_train (can be used for ML model later)
-#            # for each channel, stack features (e.g. R,G,B,NIR intensities) to column vector
+# metrics
 
-#            for chn in range(x_shape[-1]):
-#                x_batch_chn = x_batch[:,:,chn]
-#                x_batch_chn.resize(x_shape[0]*x_shape[1], 1)
-#                x_shape_resized = x_batch_chn.shape
-#                X_lst.append(x_batch_chn)
+# kappa
+# accuracy
+# precision, recall, F1-score
 
-#            y_batch.resize(y_shape[0]*y_shape[1], 1)
-#            Y_lst.append(y_batch)
 
-#            # define feature matrix and label vector
-#            X_train = np.array(X_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
-#            Y_train = np.array(Y_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
-#            print()
+# features (depends on time)
 
+# NDVI
+# etc
 
 
-#            ### HERE ERRORS MIGHT BE STARTING ...
 
 
-#            # Split dataset into training set and test set
-#            X_train, X_val, y_train, y_val = train_test_split(X_train, Y_train, test_size=0.2,
-                                                                random_state=42)  # 80% training and 20% test
 
-#            # Train the model using the training sets
 
-#            #clf = svm.SVC(kernel='linear', C=1).fit(X_train, y_train.ravel())
-#            #clf.score(X_val, y_val)
-
-            #clf.fit(X_train, y_train)
-
-#            # Predict the response for test dataset
-#            #y_pred = clf.predict(X_val)
-
-#            # Naive Bayes:
-#            gnb = GaussianNB()
-#            y_pred = gnb.fit(X_train, y_train).predict(X_val)
-#            print(f"Number of mislabeled points out of "
-#                  f"a total {X_val.shape[0]} points : {(y_val != y_pred).sum()}")
-
-
-
-#            # confusion matrix
-#            # truth: vertical axis / predicted: horizontal axis
-#            try:
-#                 conf_mat = conf_mat + confusion_matrix(y_val, y_pred, labels=[0,1,2,3]) # labels 0 = background, 1 = palm oil, 2 = clouds and 3 = no data
-#            except NameError:
-#                conf_mat = np.zeros((4,4))
-
-#            print('Confusion matrix: \n', conf_mat)
-
-#            # for plotting
-#            #axarr[i, 0].imshow(x[i, :, :, :3])  # first column: RGB
-#            #axarr[i, 1].imshow(x[i, :, :, -1])  # second column: NIR
-#            #axarr[i, 2].imshow(colormap[y[i]] / 255)  # third column:
-#            #plt.show()
-
-#        # for plotting
-#        #plt.show()
-#        # quit()
-
-#    print(f'\ncnt (looped over train_loader) = {counter} times')
-#    print('AVG confusion matrix: \n', conf_mat/counter)
-
-'''
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-#Gain access to the data.
-#Note: This does *not* load the entire data set into memory.
-dset_train = h5py.File(FILE_TRAIN,"r")
-dset_test = h5py.File(FILE_TEST, "r")
-
-#The array GT contains the values 0 = background, 1 = palm oil and 99 = no data.
-
-
-RGB_train = dset_train["RGB"]  # type: #HDF5 dataset / shape (2, 10980, 10980, 3)
-NIR_train = dset_train["NIR"]
-CLD_train = dset_train["CLD"]
-GT_train = dset_train["GT"]
-
-RGB_test = dset_test["RGB"]
-NIR_test = dset_test["NIR"]
-CLD_test = dset_test["CLD"]
-GT_test = dset_test["GT"]
-
-print('keys of dset_train: ', dset_train.keys())
-print('keys of dset_test: ', dset_test.keys())
-
-#Let's create an input-label pair:
-#first the input by concatenating the RGB and NIR channels.
-
-# expand NIR image in last dimension
-NIR_train_expanded = np.expand_dims(NIR_train, axis=-1)
-input_image_train = np.concatenate([RGB_train, NIR_train_expanded], axis=-1)
-
-NIR_test_expanded = np.expand_dims(NIR_test, axis=-1)
-input_image_test = np.concatenate([RGB_test, NIR_test_expanded], axis=-1)
-
-print(np.shape(input_image_train))
-print(type(input_image_train))
-
-
-
-### GET FEATURES AND LABELS
-
-# todo: so far, label is only created with one image
-#  create with each image in dataset and stack them together
-
-
-X_train = create_features(RGB_train, RGB_test, input_image_train)
-
-
-Y_train = create_label(CLD_train, GT_train, input_image_train)
-
-Y_test = create_label(CLD_test, GT_test, input_image_test)
-
-
+# todo: preprocessing and evaluation
 ### PREPROCESSING DATA
-
-
 # ADDING AN NDVI CHANNEL
-
 # FURTHER PREPROCESSING (FEATURE EXTRACTION)
 
-
 ### EVALUATION
-
 # CREATE CONFUSION MATRIX
-
-print(Y_train)
-print(Y_test)
-print()
-
-'''
