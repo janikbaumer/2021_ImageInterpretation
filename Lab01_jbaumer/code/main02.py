@@ -22,7 +22,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import tree
 from sklearn.impute import KNNImputer
 from scipy import ndimage
-from datetime import date
+from datetime import datetime
+from sklearn.neighbors import KNeighborsClassifier
 
 ### Functions
 
@@ -54,14 +55,6 @@ def window_level_function(image, level):
 
     image = m * image + b #The remaining, non-scaled values are adjusted by applying a linear transformation
     return image #Convert output to unsigned 8-bit integer and return
-
-def orient_deriv(imgmat: np.array) -> np.array:
-    nrow, ncol, nchan = imgmat.shape
-    x = np.zeros((nrow, ncol, nchan), dtype=float)
-    y = np.zeros((nrow, ncol, nchan), dtype=float)
-    for i in range(nchan):
-        (x[:,:,i], y[:,:,i]) = np.gradient(imgmat[:,:,i], 3)
-    return x,y
 
 def calc_ndvi(NIR, RED):
     """
@@ -222,18 +215,34 @@ if __name__ == "__main__":
     # create initialization of certain ML model
 
     ## Naive Bayes:
-    gnb = GaussianNB()
+    gnb1 = GaussianNB()
+    gnb2 = GaussianNB()
+    gnb3 = GaussianNB()
+    gnb4 = GaussianNB()
+    gnb5 = GaussianNB()
     ## Support Vector Machine: SEEMS NOT TO WORK
     #svm = svm.SVC() 
     ## Stochastic Gradient Descent SEEMS NOT TO WORK
     #sgd = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
     ## Decision tree:
-    tree = tree.DecisionTreeClassifier()
+    tree1 = tree.DecisionTreeClassifier()
+    tree2 = tree.DecisionTreeClassifier()
+    tree3 = tree.DecisionTreeClassifier()
+    tree4 = tree.DecisionTreeClassifier()
+    tree5 = tree.DecisionTreeClassifier()
     ## Random Forest:??
     
     ## Ensemble:??
     
-    ## K-Nearest neighbor:??
+    ## K-Nearest neighbor:
+    n_neigh = 5
+    neigh1 = KNeighborsClassifier(n_neighbors=n_neigh)
+    neigh2 = KNeighborsClassifier(n_neighbors=n_neigh)
+    neigh3 = KNeighborsClassifier(n_neighbors=n_neigh)
+    neigh4 = KNeighborsClassifier(n_neighbors=n_neigh)
+    neigh5 = KNeighborsClassifier(n_neighbors=n_neigh)
+    
+    
 
 
     print('TRAINING STARTING ...')
@@ -263,19 +272,18 @@ if __name__ == "__main__":
             #Grayscale as feature, adds 1 feat
             x_batch_gray = cv2.cvtColor(x_batch[:,:,0:3], cv2.COLOR_RGB2GRAY)
             x_batch = np.dstack((x_batch, x_batch_gray))
-            
-            #Gradients, adds 8 features (one per axis per raw intensity)
-            x_batch_xgrad, x_batch_ygrad = orient_deriv(x_batch[:,:,0:4])
-            x_batch = np.dstack((x_batch, x_batch_xgrad))
-            x_batch = np.dstack((x_batch, x_batch_ygrad))
-            
+                      
             #NDVI, adds 1 feat
             x_batch_ndvi = calc_ndvi(x_batch[:,:,3], x_batch[:,:,0])
             x_batch = np.dstack((x_batch, x_batch_ndvi))
             
-            #Window-level scaling/shifting, adds 1 feat
-            x_batch_wl = window_level_function(x_batch[:,:,4], 0.8)
-            x_batch = np.dstack((x_batch, x_batch_wl))
+            #Sobel axis 1
+            sobel_axis0 = ndimage.sobel(x_batch[:,:,4], axis=0)
+            x_batch = np.dstack((x_batch, sobel_axis0))
+            
+            #Sobel axis 2
+            sobel_axis1 = ndimage.sobel(x_batch[:,:,4], axis=1)
+            x_batch = np.dstack((x_batch, sobel_axis1))
             
             #Mean pixel intensity, all four original intensities, adds 1 feat
             x_batch_meanpix = mean_pix(x_batch[:,:,0:4])
@@ -293,13 +301,9 @@ if __name__ == "__main__":
             edges_prewitt_vertical = prewitt_v(x_batch[:,:,4])
             x_batch = np.dstack((x_batch, edges_prewitt_vertical))
             
-            #Sobel axis 1
-            sobel_axis0 = ndimage.sobel(x_batch[:,:,4], axis=0)
-            x_batch = np.dstack((x_batch, sobel_axis0))
-            
-            #Sobel axis 2
-            sobel_axis1 = ndimage.sobel(x_batch[:,:,4], axis=1)
-            x_batch = np.dstack((x_batch, sobel_axis1))
+            #Window-level scaling/shifting, adds 1 feat
+            x_batch_wl = window_level_function(x_batch[:,:,4], 0.8)
+            x_batch = np.dstack((x_batch, x_batch_wl))
 
             # define shapes
             x_shape = x_batch.shape
@@ -334,23 +338,61 @@ if __name__ == "__main__":
             # train model
 
             ## Naive Bayes
-            gnb.fit(X_train, Y_train)
-            #svm.fit(X_train, Y_train)
-            #sgd.fit(X_train, Y_train)
-            tree.fit(X_train, Y_train)
+            
+            gnb1.fit(X_train[:,0:4], Y_train)
+            gnb2.fit(X_train[:,0:5], Y_train)
+            gnb3.fit(X_train[:,0:6], Y_train)
+            gnb4.fit(X_train[:,0:8], Y_train)
+            gnb5.fit(X_train, Y_train)
+            
+            tree1.fit(X_train[:,0:4], Y_train)
+            tree2.fit(X_train[:,0:5], Y_train)
+            tree3.fit(X_train[:,0:6], Y_train)
+            tree4.fit(X_train[:,0:8], Y_train)
+            tree5.fit(X_train, Y_train)
+            
+            neigh1.fit(X_train[:,0:4], Y_train)
+            neigh2.fit(X_train[:,0:5], Y_train)
+            neigh3.fit(X_train[:,0:6], Y_train)
+            neigh4.fit(X_train[:,0:8], Y_train)
+            neigh5.fit(X_train, Y_train)
 
     # HERE models ARE COMPLETELY TRAINED
     
     #Save the classifiers
-    now = date.now()
-    with open('gnb_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(gnb, fid)
+    now = datetime.now()
+    with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(gnb1, fid)
+    with open('gnb2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(gnb2, fid)
+    with open('gnb3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(gnb3, fid)
+    with open('gnb4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(gnb4, fid)
+    with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(gnb5, fid)
         
-    with open('tree_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree, fid)
+    with open('tree1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(tree1, fid)
+    with open('tree2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(tree2, fid)
+    with open('tree3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(tree3, fid)
+    with open('tree4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(tree4, fid)
+    with open('tree5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(tree5, fid)
         
-#    with open('forest_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-#        cPickle.dump(forest, fid)
+    with open('neigh1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(neigh1, fid)
+    with open('neigh2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(neigh2, fid)
+    with open('neigh3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(neigh3, fid)
+    with open('neigh4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(neigh4, fid)
+    with open('neigh5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+        cPickle.dump(neigh5, fid)
 
         
     
@@ -411,10 +453,14 @@ if __name__ == "__main__":
             X_val = np.array(X_val_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
             Y_val = np.array(Y_val_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
+            ## TODO
+            #Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
+            #SAVE CONFUSION MATRICES!!!!
             Y_pred = gnb.predict(X_val)
             #Y_pred_svm = svm.predict(X_val)
             #Y_pred_sgd = sgd.predict(X_val)
 
+    
             cm = confusion_matrix(Y_val, Y_pred, labels=[0, 1, 2, 3])
             #print('cm: \n', cm)
             CM_full = CM_full + cm
@@ -431,7 +477,7 @@ if __name__ == "__main__":
             #print()
 
 
-    print('complete confusion matrix: ', CM_full)
+    print('Confusion matrices computed')
     print()
 
     # EV add multiple different scores for model evaluation
