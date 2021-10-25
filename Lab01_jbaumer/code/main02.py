@@ -171,10 +171,10 @@ class SatelliteSet(VisionDataset):
 
 # for real training, change FILE_TRAIN to ../datasets/dataset_train.h5
 cwd = os.getcwd()
-FILE_TRAIN = '..\\datasets\\dataset_train_reduced.h5'
-FILE_TRAIN = cwd + '\\datasets\\dataset_train_devel.h5'
-FILE_VAL = cwd + '\\datasets\\dataset_val.h5'
-FILE_TEST = cwd + '\\datasets\\dataset_test.h5'
+FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
+FILE_TRAIN = cwd + '/datasets/dataset_train_devel.h5'
+FILE_VAL = cwd + '/datasets/dataset_val.h5'
+FILE_TEST = cwd + '/datasets/dataset_test.h5'
 
 
 
@@ -212,6 +212,9 @@ if __name__ == "__main__":
                              shuffle=False)
 
 
+
+    print('INTIALIZATION STARTING ...')
+
     # create initialization of certain ML model
 
     ## Naive Bayes:
@@ -220,16 +223,22 @@ if __name__ == "__main__":
     gnb3 = GaussianNB()
     gnb4 = GaussianNB()
     gnb5 = GaussianNB()
+
     ## Support Vector Machine: SEEMS NOT TO WORK
     #svm = svm.SVC() 
+
     ## Stochastic Gradient Descent SEEMS NOT TO WORK
     #sgd = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
+
+
     ## Decision tree:
     tree1 = tree.DecisionTreeClassifier()
     tree2 = tree.DecisionTreeClassifier()
     tree3 = tree.DecisionTreeClassifier()
     tree4 = tree.DecisionTreeClassifier()
     tree5 = tree.DecisionTreeClassifier()
+
+
     ## Random Forest:??
     
     ## Ensemble:??
@@ -413,7 +422,26 @@ if __name__ == "__main__":
     iterator_val = 0
     f1_full = 0
     kappa_full = 0
-    CM_full = np.zeros((4,4))
+    
+    CM_full_gnb1 = np.zeros((4,4))
+    CM_full_gnb2 = np.zeros((4, 4))
+    CM_full_gnb3 = np.zeros((4, 4))
+    CM_full_gnb4 = np.zeros((4, 4))
+    CM_full_gnb5 = np.zeros((4, 4))
+
+    CM_full_tree1 = np.zeros((4, 4))
+    CM_full_tree2 = np.zeros((4, 4))
+    CM_full_tree3 = np.zeros((4, 4))
+    CM_full_tree4 = np.zeros((4, 4))
+    CM_full_tree5 = np.zeros((4, 4))
+
+    CM_full_neigh1 = np.zeros((4, 4))
+    CM_full_neigh2 = np.zeros((4, 4))
+    CM_full_neigh3 = np.zeros((4, 4))
+    CM_full_neigh4 = np.zeros((4, 4))
+    CM_full_neigh5 = np.zeros((4, 4))
+
+
     for x_va, y_va in tqdm(val_loader): # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
         iterator_val += 1
         x_va = np.transpose(x_va, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
@@ -456,15 +484,64 @@ if __name__ == "__main__":
             ## TODO
             #Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
             #SAVE CONFUSION MATRICES!!!!
-            Y_pred = gnb.predict(X_val)
+            Y_pred_gnb1 = gnb1.predict(X_val)
+            Y_pred_gnb2 = gnb2.predict(X_val)
+            Y_pred_gnb3 = gnb3.predict(X_val)
+            Y_pred_gnb4 = gnb4.predict(X_val)
+            Y_pred_gnb5 = gnb5.predict(X_val)
+
+            Y_pred_tree1 = tree1.predict(X_val)
+            Y_pred_tree2 = tree2.predict(X_val)
+            Y_pred_tree3 = tree3.predict(X_val)
+            Y_pred_tree4 = tree4.predict(X_val)
+            Y_pred_tree5 = tree5.predict(X_val)
+
+            Y_pred_neigh1 = neigh1.predict(X_val)
+            Y_pred_neigh2 = neigh2.predict(X_val)
+            Y_pred_neigh3 = neigh3.predict(X_val)
+            Y_pred_neigh4 = neigh4.predict(X_val)
+            Y_pred_neigh5 = neigh5.predict(X_val)
+
+
+
             #Y_pred_svm = svm.predict(X_val)
             #Y_pred_sgd = sgd.predict(X_val)
 
     
-            cm = confusion_matrix(Y_val, Y_pred, labels=[0, 1, 2, 3])
-            #print('cm: \n', cm)
-            CM_full = CM_full + cm
+            cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=[0, 1, 2, 3])
+            CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
+            cm_gnb2 = confusion_matrix(Y_val, Y_pred_gnb2, labels=[0, 1, 2, 3])
+            CM_full_gnb2 = CM_full_gnb2 + cm_gnb2
+            cm_gnb3 = confusion_matrix(Y_val, Y_pred_gnb3, labels=[0, 1, 2, 3])
+            CM_full_gnb3 = CM_full_gnb3 + cm_gnb3
+            cm_gnb4 = confusion_matrix(Y_val, Y_pred_gnb4, labels=[0, 1, 2, 3])
+            CM_full_gnb4 = CM_full_gnb4 + cm_gnb4
+            cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=[0, 1, 2, 3])
+            CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
 
+
+            cm_tree1 = confusion_matrix(Y_val, Y_pred_tree1, labels=[0, 1, 2, 3])
+            CM_full_tree1 = CM_full_tree1 + cm_tree1
+            cm_tree2 = confusion_matrix(Y_val, Y_pred_tree2, labels=[0, 1, 2, 3])
+            CM_full_tree2 = CM_full_tree2 + cm_tree2
+            cm_tree3 = confusion_matrix(Y_val, Y_pred_tree3, labels=[0, 1, 2, 3])
+            CM_full_tree3 = CM_full_tree3 + cm_tree3
+            cm_tree4 = confusion_matrix(Y_val, Y_pred_tree4, labels=[0, 1, 2, 3])
+            CM_full_tree4 = CM_full_tree4 + cm_tree4
+            cm_tree5 = confusion_matrix(Y_val, Y_pred_tree5, labels=[0, 1, 2, 3])
+            CM_full_tree5 = CM_full_tree5 + cm_tree5
+
+
+            cm_neigh1 = confusion_matrix(Y_val, Y_pred_neigh1, labels=[0, 1, 2, 3])
+            CM_full_neigh1 = CM_full_neigh1 + cm_neigh1
+            cm_neigh2 = confusion_matrix(Y_val, Y_pred_neigh2, labels=[0, 1, 2, 3])
+            CM_full_neigh2 = CM_full_neigh2 + cm_neigh2
+            cm_neigh3 = confusion_matrix(Y_val, Y_pred_neigh3, labels=[0, 1, 2, 3])
+            CM_full_neigh3 = CM_full_neigh3 + cm_neigh3
+            cm_neigh4 = confusion_matrix(Y_val, Y_pred_neigh4, labels=[0, 1, 2, 3])
+            CM_full_neigh4 = CM_full_neigh4 + cm_neigh4
+            cm_neigh5 = confusion_matrix(Y_val, Y_pred_neigh5, labels=[0, 1, 2, 3])
+            CM_full_neigh5 = CM_full_neigh5 + cm_neigh5
             # compute f1-score for each batch
             #f1 = f1_score(Y_val, Y_pred)
             #f1_full += f1
@@ -478,7 +555,28 @@ if __name__ == "__main__":
 
 
     print('Confusion matrices computed')
-    print()
+    print('SAVING CONFUSION MATRICES ...')
+
+    np.savetxt('cm_full_gnb1.csv', CM_full_gnb1, delimiter=',')
+    np.savetxt('cm_full_gnb2.csv', CM_full_gnb2, delimiter=',')
+    np.savetxt('cm_full_gnb3.csv', CM_full_gnb3, delimiter=',')
+    np.savetxt('cm_full_gnb4.csv', CM_full_gnb4, delimiter=',')
+    np.savetxt('cm_full_gnb5.csv', CM_full_gnb5, delimiter=',')
+
+    np.savetxt('cm_full_tree1.csv', CM_full_tree1, delimiter=',')
+    np.savetxt('cm_full_tree2.csv', CM_full_tree2, delimiter=',')
+    np.savetxt('cm_full_tree3.csv', CM_full_tree3, delimiter=',')
+    np.savetxt('cm_full_tree4.csv', CM_full_tree4, delimiter=',')
+    np.savetxt('cm_full_tree5.csv', CM_full_tree5, delimiter=',')
+
+    np.savetxt('cm_full_neigh1.csv', CM_full_neigh1, delimiter=',')
+    np.savetxt('cm_full_neigh2.csv', CM_full_neigh2, delimiter=',')
+    np.savetxt('cm_full_neigh3.csv', CM_full_neigh3, delimiter=',')
+    np.savetxt('cm_full_neigh4.csv', CM_full_neigh4, delimiter=',')
+    np.savetxt('cm_full_neigh5.csv', CM_full_neigh5, delimiter=',')
+
+
+
 
     # EV add multiple different scores for model evaluation
 
@@ -527,16 +625,3 @@ if __name__ == "__main__":
 
 # NDVI
 # etc
-
-
-
-
-
-
-# todo: preprocessing and evaluation
-### PREPROCESSING DATA
-# ADDING AN NDVI CHANNEL
-# FURTHER PREPROCESSING (FEATURE EXTRACTION)
-
-### EVALUATION
-# CREATE CONFUSION MATRIX
