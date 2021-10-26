@@ -204,7 +204,7 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('neigh1_classifier26_18.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('sgdc1_classifier26_20.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
@@ -322,11 +322,11 @@ if __name__ == "__main__":
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
-        sgdc1 = cPickle.load(open('sgdc1_classifier26_13.pkl', 'rb'))
-        sgdc2 = cPickle.load(open('sgdc2_classifier26_13.pkl', 'rb'))
-        sgdc3 = cPickle.load(open('sgdc3_classifier26_13.pkl', 'rb'))
-        sgdc4 = cPickle.load(open('sgdc4_classifier26_13.pkl', 'rb'))
-        sgdc5 = cPickle.load(open('sgdc5_classifier26_13.pkl', 'rb'))
+        sgdc1 = cPickle.load(open('sgdc1_classifier26_20.pkl', 'rb'))
+        sgdc2 = cPickle.load(open('sgdc2_classifier26_20.pkl', 'rb'))
+        sgdc3 = cPickle.load(open('sgdc3_classifier26_20.pkl', 'rb'))
+        sgdc4 = cPickle.load(open('sgdc4_classifier26_20.pkl', 'rb'))
+        sgdc5 = cPickle.load(open('sgdc5_classifier26_20.pkl', 'rb'))
 
     # HERE models ARE COMPLETELY TRAINED
 
