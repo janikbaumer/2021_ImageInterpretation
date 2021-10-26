@@ -213,11 +213,6 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-
-
-
-
-
     if not os.path.isfile('gnb1_classifier26_13.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
@@ -230,12 +225,6 @@ if __name__ == "__main__":
         gnb3 = GaussianNB()
         gnb4 = GaussianNB()
         gnb5 = GaussianNB()
-
-        ## Support Vector Machine: SEEMS NOT TO WORK
-        # svm = svm.SVC()
-
-        ## Stochastic Gradient Descent SEEMS NOT TO WORK
-        # sgd = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 
         '''
         ## Decision tree:
@@ -430,8 +419,6 @@ if __name__ == "__main__":
     with open('neigh5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(neigh5, fid)
     '''
-        
-    
 
     # todo
     # for validation, take full imgs of validations dsets - we anyway take subsamples (128 pxl)
@@ -441,14 +428,9 @@ if __name__ == "__main__":
 
     # based confusion matrices, different models can be compared - use best one on test dset
 
-    
-
-
     print('VALIDATION STARTING ...')
 
     iterator_val = 0
-    f1_full = 0
-    kappa_full = 0
     
     CM_full_gnb1 = np.zeros((4,4))
     CM_full_gnb2 = np.zeros((4, 4))
@@ -544,14 +526,12 @@ if __name__ == "__main__":
             y_va_batch.resize(y_va_shape[0]*y_va_shape[1], 1)
             Y_val_lst.append(y_va_batch)
 
-
             # define feature matrix and label vector
             X_val = np.array(X_val_lst).T[0]  # transpose to have one col per feature, first ele because this dimension was somehow added
             Y_val = np.array(Y_val_lst).T[0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
             ## TODO
             #Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
-            #SAVE CONFUSION MATRICES!!!!
             Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
             Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
             Y_pred_gnb3 = gnb3.predict(X_val[:, 0:6])
@@ -571,10 +551,6 @@ if __name__ == "__main__":
             Y_pred_neigh4 = neigh4.predict(X_val[:, 0:8])
             Y_pred_neigh5 = neigh5.predict(X_val)
             '''
-
-            #Y_pred_svm = svm.predict(X_val)
-            #Y_pred_sgd = sgd.predict(X_val)
-
     
             cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=[0, 1, 2, 3])
             CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
@@ -599,7 +575,6 @@ if __name__ == "__main__":
             cm_tree5 = confusion_matrix(Y_val, Y_pred_tree5, labels=[0, 1, 2, 3])
             CM_full_tree5 = CM_full_tree5 + cm_tree5
 
-
             cm_neigh1 = confusion_matrix(Y_val, Y_pred_neigh1, labels=[0, 1, 2, 3])
             CM_full_neigh1 = CM_full_neigh1 + cm_neigh1
             cm_neigh2 = confusion_matrix(Y_val, Y_pred_neigh2, labels=[0, 1, 2, 3])
@@ -612,27 +587,12 @@ if __name__ == "__main__":
             CM_full_neigh5 = CM_full_neigh5 + cm_neigh5
             '''
 
-            # compute f1-score for each batch
-            #f1 = f1_score(Y_val, Y_pred)
-            #f1_full += f1
-            #print()
-
-            # kappa
-            #kappa = cohen_kappa_score(Y_val, Y_pred)
-            #kappa_full += kappa
-            #print('CM full: \n', CM_full)
-            #print()
-
-
-    print('Confusion matrices computed')
-    print('SAVING CONFUSION MATRICES ...')
-
+    print('CONFUSION MATRICES COMPUTED - SAVING CONFUSION MATRICES ...')
     np.savetxt('cm_full_gnb1.csv', CM_full_gnb1, delimiter=',')
     np.savetxt('cm_full_gnb2.csv', CM_full_gnb2, delimiter=',')
     np.savetxt('cm_full_gnb3.csv', CM_full_gnb3, delimiter=',')
     np.savetxt('cm_full_gnb4.csv', CM_full_gnb4, delimiter=',')
     np.savetxt('cm_full_gnb5.csv', CM_full_gnb5, delimiter=',')
-
 
     '''
     np.savetxt('cm_full_tree1.csv', CM_full_tree1, delimiter=',')
@@ -648,52 +608,11 @@ if __name__ == "__main__":
     np.savetxt('cm_full_neigh5.csv', CM_full_neigh5, delimiter=',')
     '''
 
-
-
-    # EV add multiple different scores for model evaluation
-
-    # average f1 scores, kappa
-    #f1_avg = f1_full / iterator_val
-    #kappa_avg = kappa_full / iterator_val
-
-
-
-
-
     # Please note that random shuffling (shuffle=True) -> random access.
     # this is slower than sequential reading (shuffle=False)
     # If you want to speed up the read performance but keep the data shuffled, you can reshape the data to a fixed window size
     # e.g. (-1,4,128,128) and shuffle once along the first dimension. Then read the data sequentially.
     # another option is to read the data into the main memory h5 = h5py.File(root, 'r', driver="core")
 
-
     # for plotting
     #f, axarr = plt.subplots(ncols=3, nrows=8)
-
-
-
-
-
-
-#### discussion with other groups
-
-# models
-
-# KNN
-# Decision tree
-# rdm forest
-# SVM
-# naive bayes
-
-
-# metrics
-
-# kappa
-# accuracy
-# precision, recall, F1-score
-
-
-# features (depends on time)
-
-# NDVI
-# etc
