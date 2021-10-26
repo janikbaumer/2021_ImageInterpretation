@@ -210,11 +210,11 @@ if __name__ == "__main__":
 
         # create initialization of certain ML model
 
-        knn1 = SGDClassifier()
-        knn2 = SGDClassifier()
-        knn3 = SGDClassifier()
-        knn4 = SGDClassifier()
-        knn5 = SGDClassifier()
+        sgdc1 = SGDClassifier()
+        sgdc2 = SGDClassifier()
+        sgdc3 = SGDClassifier()
+        sgdc4 = SGDClassifier()
+        sgdc5 = SGDClassifier()
 
         print('TRAINING STARTING ...')
 
@@ -312,76 +312,48 @@ if __name__ == "__main__":
                 # train model
 
 
-                # lazy KNN
-                knn1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
-                knn2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
-                knn3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
-                knn4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
-                knn5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
+                # sgdc
+                sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
+                sgdc2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
+                sgdc3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
+                sgdc4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
+                sgdc5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
 
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
-        gnb1 = cPickle.load(open('sgdc1_classifier26_13.pkl', 'rb'))
-        gnb2 = cPickle.load(open('sgdc2_classifier26_13.pkl', 'rb'))
-        gnb3 = cPickle.load(open('sgdc3_classifier26_13.pkl', 'rb'))
-        gnb4 = cPickle.load(open('sgdc4_classifier26_13.pkl', 'rb'))
-        gnb5 = cPickle.load(open('sgdc5_classifier26_13.pkl', 'rb'))
+        sgdc1 = cPickle.load(open('sgdc1_classifier26_13.pkl', 'rb'))
+        sgdc2 = cPickle.load(open('sgdc2_classifier26_13.pkl', 'rb'))
+        sgdc3 = cPickle.load(open('sgdc3_classifier26_13.pkl', 'rb'))
+        sgdc4 = cPickle.load(open('sgdc4_classifier26_13.pkl', 'rb'))
+        sgdc5 = cPickle.load(open('sgdc5_classifier26_13.pkl', 'rb'))
 
-        # todo: add other models to be read
-        # tree and neigh
     # HERE models ARE COMPLETELY TRAINED
 
     now = datetime.now()
-    '''
-    if not os.path.isfile('gnb1_classifier26_13.pkl'):
-        #Save the classifiers todo: this might duplicate models even if they already exist
-        with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(gnb1, fid)
-        with open('gnb2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(gnb2, fid)
-        with open('gnb3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(gnb3, fid)
-        with open('gnb4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(gnb4, fid)
-        with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(gnb5, fid)
-    '''
-    '''
-    if not os.path.isfile('tree1_classifier26_20.pkl'):
-        with open('tree1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(tree1, fid)
-        with open('tree2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(tree2, fid)
-        with open('tree3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(tree3, fid)
-        with open('tree4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(tree4, fid)
-        with open('tree5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(tree5, fid)
-    '''
-    if not os.path.isfile('knn1_classifier26_20.pkl'):
+
+    if not os.path.isfile('sgdc1_classifier26_20.pkl'):
         with open('sgdc1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(knn1, fid)
+            cPickle.dump(sgdc1, fid)
         with open('sgdc2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(knn2, fid)
+            cPickle.dump(sgdc2, fid)
         with open('sgdc3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(knn3, fid)
+            cPickle.dump(sgdc3, fid)
         with open('sgdc4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(knn4, fid)
+            cPickle.dump(sgdc4, fid)
         with open('sgdc5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-            cPickle.dump(knn5, fid)
+            cPickle.dump(sgdc5, fid)
 
 
     print('VALIDATION STARTING ...')
 
     iterator_val = 0
 
-    CM_full_knn1 = np.zeros((4, 4))
-    CM_full_knn2 = np.zeros((4, 4))
-    CM_full_knn3 = np.zeros((4, 4))
-    CM_full_knn4 = np.zeros((4, 4))
-    CM_full_knn5 = np.zeros((4, 4))
+    CM_full_sgdc1 = np.zeros((4, 4))
+    CM_full_sgdc2 = np.zeros((4, 4))
+    CM_full_sgdc3 = np.zeros((4, 4))
+    CM_full_sgdc4 = np.zeros((4, 4))
+    CM_full_sgdc5 = np.zeros((4, 4))
 
     for x_va, y_va in tqdm(
             val_loader):  # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
@@ -468,30 +440,30 @@ if __name__ == "__main__":
             # Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
 
 
-            Y_pred_neigh1 = knn1.predict(X_val[:, 0:4])
-            Y_pred_neigh2 = knn2.predict(X_val[:, 0:5])
-            Y_pred_neigh3 = knn3.predict(X_val[:, 0:6])
-            Y_pred_neigh4 = knn4.predict(X_val[:, 0:8])
-            Y_pred_neigh5 = knn5.predict(X_val)
+            Y_pred_sgdc1 = sgdc1.predict(X_val[:, 0:4])
+            Y_pred_sgdc2 = sgdc2.predict(X_val[:, 0:5])
+            Y_pred_sgdc3 = sgdc3.predict(X_val[:, 0:6])
+            Y_pred_sgdc4 = sgdc4.predict(X_val[:, 0:8])
+            Y_pred_sgdc5 = sgdc5.predict(X_val)
 
 
-            cm_knn1 = confusion_matrix(Y_val, Y_pred_neigh1, labels=[0, 1, 2, 3])
-            CM_full_neigh1 = CM_full_neigh1 + cm_knn1
-            cm_knn2 = confusion_matrix(Y_val, Y_pred_neigh2, labels=[0, 1, 2, 3])
-            CM_full_neigh2 = CM_full_neigh2 + cm_knn2
-            cm_knn3 = confusion_matrix(Y_val, Y_pred_neigh3, labels=[0, 1, 2, 3])
-            CM_full_neigh3 = CM_full_neigh3 + cm_knn3
-            cm_knn4 = confusion_matrix(Y_val, Y_pred_neigh4, labels=[0, 1, 2, 3])
-            CM_full_neigh4 = CM_full_neigh4 + cm_knn4
-            cm_knn5 = confusion_matrix(Y_val, Y_pred_neigh5, labels=[0, 1, 2, 3])
-            CM_full_neigh5 = CM_full_neigh5 + cm_knn5
+            cm_sgdc1 = confusion_matrix(Y_val, Y_pred_sgdc1, labels=[0, 1, 2, 3])
+            CM_full_sgdc1 = CM_full_sgdc1 + cm_sgdc1
+            cm_sgdc2 = confusion_matrix(Y_val, Y_pred_sgdc2, labels=[0, 1, 2, 3])
+            CM_full_sgdc2 = CM_full_sgdc2 + cm_sgdc2
+            cm_sgdc3 = confusion_matrix(Y_val, Y_pred_sgdc3, labels=[0, 1, 2, 3])
+            CM_full_sgdc3 = CM_full_sgdc3 + cm_sgdc3
+            cm_sgdc4 = confusion_matrix(Y_val, Y_pred_sgdc4, labels=[0, 1, 2, 3])
+            CM_full_sgdc4 = CM_full_sgdc4 + cm_sgdc4
+            cm_sgdc5 = confusion_matrix(Y_val, Y_pred_sgdc5, labels=[0, 1, 2, 3])
+            CM_full_sgdc5 = CM_full_sgdc5 + cm_sgdc5
 
 
-    np.savetxt('cm_full_sgdc1.csv', CM_full_knn1, delimiter=',')
-    np.savetxt('cm_full_sgdc2.csv', CM_full_knn2, delimiter=',')
-    np.savetxt('cm_full_sgdc3.csv', CM_full_knn3, delimiter=',')
-    np.savetxt('cm_full_sgdc4.csv', CM_full_knn4, delimiter=',')
-    np.savetxt('cm_full_sgdc5.csv', CM_full_knn5, delimiter=',')
+    np.savetxt('cm_full_sgdc1.csv', CM_full_sgdc1, delimiter=',')
+    np.savetxt('cm_full_sgdc2.csv', CM_full_sgdc2, delimiter=',')
+    np.savetxt('cm_full_sgdc3.csv', CM_full_sgdc3, delimiter=',')
+    np.savetxt('cm_full_sgdc4.csv', CM_full_sgdc4, delimiter=',')
+    np.savetxt('cm_full_sgdc5.csv', CM_full_sgdc5, delimiter=',')
 
     # Please note that random shuffling (shuffle=True) -> random access.
     # this is slower than sequential reading (shuffle=False)
