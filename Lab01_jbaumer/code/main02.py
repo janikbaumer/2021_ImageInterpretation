@@ -25,6 +25,9 @@ from sklearn.impute import KNNImputer
 from scipy import ndimage
 from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
+from skmultiflow.trees import HoeffdingTree
+from skmultiflow.lazy import KNNClassifier
+
 
 ### Functions
 
@@ -172,9 +175,9 @@ class SatelliteSet(VisionDataset):
 
 # for real training, change FILE_TRAIN to ../datasets/dataset_train.h5
 cwd = os.getcwd()
-FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
+#FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
 FILE_TRAIN = '../datasets/dataset_train_devel.h5'
-FILE_TRAIN = '../datasets/dataset_train_decide_20imgs.h5'
+#FILE_TRAIN = '../datasets/dataset_train_decide_20imgs.h5'
 FILE_VAL =  '../datasets/dataset_val.h5'
 FILE_TEST = '../datasets/dataset_test.h5'
 
@@ -213,12 +216,13 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('gnb1_classifier26_13.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('neigh1_classifier26_18.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
         # create initialization of certain ML model
 
+        '''
         ## Naive Bayes:
         gnb1 = GaussianNB()
         gnb2 = GaussianNB()
@@ -227,26 +231,22 @@ if __name__ == "__main__":
         gnb5 = GaussianNB()
 
         '''
+        '''
         ## Decision tree:
-        tree1 = tree.DecisionTreeClassifier()
-        tree2 = tree.DecisionTreeClassifier()
-        tree3 = tree.DecisionTreeClassifier()
-        tree4 = tree.DecisionTreeClassifier()
-        tree5 = tree.DecisionTreeClassifier()
-
-
-        ## Random Forest:??
-
-        ## Ensemble:??
-
+        tree1 = HoeffdingTree()
+        tree2 = HoeffdingTree()
+        tree3 = HoeffdingTree()
+        tree4 = HoeffdingTree()
+        tree5 = HoeffdingTree()
+        '''
         ## K-Nearest neighbor:
         n_neigh = 5
-        neigh1 = KNeighborsClassifier(n_neighbors=n_neigh)
-        neigh2 = KNeighborsClassifier(n_neighbors=n_neigh)
-        neigh3 = KNeighborsClassifier(n_neighbors=n_neigh)
-        neigh4 = KNeighborsClassifier(n_neighbors=n_neigh)
-        neigh5 = KNeighborsClassifier(n_neighbors=n_neigh)
-        '''
+        neigh1 = KNNClassifier(n_neighbors=n_neigh)
+        neigh2 = KNNClassifier(n_neighbors=n_neigh)
+        neigh3 = KNNClassifier(n_neighbors=n_neigh)
+        neigh4 = KNNClassifier(n_neighbors=n_neigh)
+        neigh5 = KNNClassifier(n_neighbors=n_neigh)
+
 
         print('TRAINING STARTING ...')
 
@@ -324,8 +324,6 @@ if __name__ == "__main__":
                 Y_lst = []
 
 
-
-
                 # create feature matrix X_train (can be used for ML model later)
                 # for each channel, stack features (e.g. R,G,B,NIR intensities) to column vector
                 for chn in range(x_shape[-1]):
@@ -345,29 +343,33 @@ if __name__ == "__main__":
                 scaler = StandardScaler()
                 X_train = scaler.fit_transform(X_train)
 
+
                 # train model
 
-                ## Naive Bayes
-
-                gnb1.fit(X_train[:,0:4], Y_train)
-                gnb2.fit(X_train[:,0:5], Y_train)
-                gnb3.fit(X_train[:,0:6], Y_train)
-                gnb4.fit(X_train[:,0:8], Y_train)
-                gnb5.fit(X_train, Y_train)
+                '''
+                # Naive Bayes
+                gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
+                gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
+                gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
+                gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
+                gnb5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
 
                 '''
-                tree1.fit(X_train[:,0:4], Y_train)
-                tree2.fit(X_train[:,0:5], Y_train)
-                tree3.fit(X_train[:,0:6], Y_train)
-                tree4.fit(X_train[:,0:8], Y_train)
-                tree5.fit(X_train, Y_train)
-                
-                neigh1.fit(X_train[:,0:4], Y_train)
-                neigh2.fit(X_train[:,0:5], Y_train)
-                neigh3.fit(X_train[:,0:6], Y_train)
-                neigh4.fit(X_train[:,0:8], Y_train)
-                neigh5.fit(X_train, Y_train)
                 '''
+                # Hoeffding tree
+                tree1.partial_fit(X_train[:, 0:4 ], Y_train, classes=[0, 1, 2, 3])
+                tree2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
+                tree3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
+                tree4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
+                tree5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
+                '''
+                # lazy KNN
+                neigh1.partial_fit(X_train[:, 0:4], Y_train)
+                neigh2.partial_fit(X_train[:, 0:5], Y_train)
+                neigh3.partial_fit(X_train[:, 0:6], Y_train)
+                neigh4.partial_fit(X_train[:, 0:8], Y_train)
+                neigh5.partial_fit(X_train, Y_train)
+
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
@@ -380,10 +382,11 @@ if __name__ == "__main__":
         # todo: add other models to be read
         # tree and neigh
     # HERE models ARE COMPLETELY TRAINED
-    
+
+    now = datetime.now()
+    '''
     if not os.path.isfile('gnb1_classifier26_13.pkl'):
         #Save the classifiers todo: this might duplicate models even if they already exist
-        now = datetime.now()
         with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb1, fid)
         with open('gnb2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -394,20 +397,21 @@ if __name__ == "__main__":
             cPickle.dump(gnb4, fid)
         with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb5, fid)
-
-
     '''
-    with open('tree1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree1, fid)
-    with open('tree2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree2, fid)
-    with open('tree3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree3, fid)
-    with open('tree4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree4, fid)
-    with open('tree5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
-        cPickle.dump(tree5, fid)
-        
+    '''
+    if not os.path.isfile('tree1_classifier26_20.pkl'):
+        with open('tree1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(tree1, fid)
+        with open('tree2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(tree2, fid)
+        with open('tree3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(tree3, fid)
+        with open('tree4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(tree4, fid)
+        with open('tree5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(tree5, fid)
+    '''
+
     with open('neigh1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(neigh1, fid)
     with open('neigh2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -418,7 +422,7 @@ if __name__ == "__main__":
         cPickle.dump(neigh4, fid)
     with open('neigh5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(neigh5, fid)
-    '''
+
 
     # todo
     # for validation, take full imgs of validations dsets - we anyway take subsamples (128 pxl)
@@ -431,7 +435,7 @@ if __name__ == "__main__":
     print('VALIDATION STARTING ...')
 
     iterator_val = 0
-    
+    '''
     CM_full_gnb1 = np.zeros((4,4))
     CM_full_gnb2 = np.zeros((4, 4))
     CM_full_gnb3 = np.zeros((4, 4))
@@ -439,18 +443,21 @@ if __name__ == "__main__":
     CM_full_gnb5 = np.zeros((4, 4))
 
     '''
+    '''
     CM_full_tree1 = np.zeros((4, 4))
     CM_full_tree2 = np.zeros((4, 4))
     CM_full_tree3 = np.zeros((4, 4))
     CM_full_tree4 = np.zeros((4, 4))
     CM_full_tree5 = np.zeros((4, 4))
 
+    '''
     CM_full_neigh1 = np.zeros((4, 4))
     CM_full_neigh2 = np.zeros((4, 4))
     CM_full_neigh3 = np.zeros((4, 4))
     CM_full_neigh4 = np.zeros((4, 4))
     CM_full_neigh5 = np.zeros((4, 4))
-    '''
+
+
 
     for x_va, y_va in tqdm(val_loader): # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
         iterator_val += 1
@@ -532,6 +539,7 @@ if __name__ == "__main__":
 
             ## TODO
             #Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
+            '''
             Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
             Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
             Y_pred_gnb3 = gnb3.predict(X_val[:, 0:6])
@@ -539,19 +547,22 @@ if __name__ == "__main__":
             Y_pred_gnb5 = gnb5.predict(X_val)
 
             '''
+            '''
             Y_pred_tree1 = tree1.predict(X_val[:, 0:4])
             Y_pred_tree2 = tree2.predict(X_val[:, 0:5])
             Y_pred_tree3 = tree3.predict(X_val[:, 0:6])
             Y_pred_tree4 = tree4.predict(X_val[:, 0:8])
             Y_pred_tree5 = tree5.predict(X_val)
+            '''
 
             Y_pred_neigh1 = neigh1.predict(X_val[:, 0:4])
             Y_pred_neigh2 = neigh2.predict(X_val[:, 0:5])
             Y_pred_neigh3 = neigh3.predict(X_val[:, 0:6])
             Y_pred_neigh4 = neigh4.predict(X_val[:, 0:8])
             Y_pred_neigh5 = neigh5.predict(X_val)
+
+
             '''
-    
             cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=[0, 1, 2, 3])
             CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
             cm_gnb2 = confusion_matrix(Y_val, Y_pred_gnb2, labels=[0, 1, 2, 3])
@@ -562,7 +573,7 @@ if __name__ == "__main__":
             CM_full_gnb4 = CM_full_gnb4 + cm_gnb4
             cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=[0, 1, 2, 3])
             CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
-
+            '''
             '''
             cm_tree1 = confusion_matrix(Y_val, Y_pred_tree1, labels=[0, 1, 2, 3])
             CM_full_tree1 = CM_full_tree1 + cm_tree1
@@ -575,6 +586,7 @@ if __name__ == "__main__":
             cm_tree5 = confusion_matrix(Y_val, Y_pred_tree5, labels=[0, 1, 2, 3])
             CM_full_tree5 = CM_full_tree5 + cm_tree5
 
+            '''
             cm_neigh1 = confusion_matrix(Y_val, Y_pred_neigh1, labels=[0, 1, 2, 3])
             CM_full_neigh1 = CM_full_neigh1 + cm_neigh1
             cm_neigh2 = confusion_matrix(Y_val, Y_pred_neigh2, labels=[0, 1, 2, 3])
@@ -585,28 +597,30 @@ if __name__ == "__main__":
             CM_full_neigh4 = CM_full_neigh4 + cm_neigh4
             cm_neigh5 = confusion_matrix(Y_val, Y_pred_neigh5, labels=[0, 1, 2, 3])
             CM_full_neigh5 = CM_full_neigh5 + cm_neigh5
-            '''
 
+
+    '''
     print('CONFUSION MATRICES COMPUTED - SAVING CONFUSION MATRICES ...')
     np.savetxt('cm_full_gnb1.csv', CM_full_gnb1, delimiter=',')
     np.savetxt('cm_full_gnb2.csv', CM_full_gnb2, delimiter=',')
     np.savetxt('cm_full_gnb3.csv', CM_full_gnb3, delimiter=',')
     np.savetxt('cm_full_gnb4.csv', CM_full_gnb4, delimiter=',')
     np.savetxt('cm_full_gnb5.csv', CM_full_gnb5, delimiter=',')
-
+    '''
     '''
     np.savetxt('cm_full_tree1.csv', CM_full_tree1, delimiter=',')
     np.savetxt('cm_full_tree2.csv', CM_full_tree2, delimiter=',')
     np.savetxt('cm_full_tree3.csv', CM_full_tree3, delimiter=',')
     np.savetxt('cm_full_tree4.csv', CM_full_tree4, delimiter=',')
     np.savetxt('cm_full_tree5.csv', CM_full_tree5, delimiter=',')
+    '''
 
     np.savetxt('cm_full_neigh1.csv', CM_full_neigh1, delimiter=',')
     np.savetxt('cm_full_neigh2.csv', CM_full_neigh2, delimiter=',')
     np.savetxt('cm_full_neigh3.csv', CM_full_neigh3, delimiter=',')
     np.savetxt('cm_full_neigh4.csv', CM_full_neigh4, delimiter=',')
     np.savetxt('cm_full_neigh5.csv', CM_full_neigh5, delimiter=',')
-    '''
+
 
     # Please note that random shuffling (shuffle=True) -> random access.
     # this is slower than sequential reading (shuffle=False)
@@ -616,3 +630,4 @@ if __name__ == "__main__":
 
     # for plotting
     #f, axarr = plt.subplots(ncols=3, nrows=8)
+
