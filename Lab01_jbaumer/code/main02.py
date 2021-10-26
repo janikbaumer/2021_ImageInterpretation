@@ -5,7 +5,8 @@ import h5py
 import torch
 import os
 import cv2
-import cPickle
+import pickle as cPickle
+
 
 from tqdm import tqdm
 from torchvision.datasets.vision import VisionDataset
@@ -172,9 +173,10 @@ class SatelliteSet(VisionDataset):
 # for real training, change FILE_TRAIN to ../datasets/dataset_train.h5
 cwd = os.getcwd()
 FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
-FILE_TRAIN = cwd + '/datasets/dataset_train_devel.h5'
-FILE_VAL = cwd + '/datasets/dataset_val.h5'
-FILE_TEST = cwd + '/datasets/dataset_test.h5'
+FILE_TRAIN = '../datasets/dataset_train_devel.h5'
+FILE_TRAIN = '../datasets/dataset_train_decide_20imgs.h5'
+FILE_VAL =  '../datasets/dataset_val.h5'
+FILE_TEST = '../datasets/dataset_test.h5'
 
 
 
@@ -230,7 +232,7 @@ if __name__ == "__main__":
     ## Stochastic Gradient Descent SEEMS NOT TO WORK
     #sgd = SGDClassifier(loss="hinge", penalty="l2", max_iter=5)
 
-
+    '''
     ## Decision tree:
     tree1 = tree.DecisionTreeClassifier()
     tree2 = tree.DecisionTreeClassifier()
@@ -250,7 +252,7 @@ if __name__ == "__main__":
     neigh3 = KNeighborsClassifier(n_neighbors=n_neigh)
     neigh4 = KNeighborsClassifier(n_neighbors=n_neigh)
     neigh5 = KNeighborsClassifier(n_neighbors=n_neigh)
-    
+    '''
     
 
 
@@ -263,6 +265,7 @@ if __name__ == "__main__":
 
     for x, y in tqdm(train_loader): # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable)
         train_loader_loop += 1
+        # print('train loader loop: ', train_loader_loop)
         x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
         x = x.numpy()  #  x is not yet ndarray - convert x from pytorch tensor to ndarray
 
@@ -272,7 +275,7 @@ if __name__ == "__main__":
 
         # loop over batch size of train_loader ((all images in this batch (?))
         for i in range(len(x)):
-            print(f'training with image {i} of {len(x)} of train loader loop no: {train_loader_loop}')
+            #print(f'training with image {i} of {len(x)} of train loader loop no: {train_loader_loop}')
             x_batch = x[i]
             y_batch = y[i]
             
@@ -314,6 +317,9 @@ if __name__ == "__main__":
             x_batch_wl = window_level_function(x_batch[:,:,4], 0.8)
             x_batch = np.dstack((x_batch, x_batch_wl))
 
+            # convert nan values to 0
+            x_batch = np.nan_to_num(x_batch)
+
             # define shapes
             x_shape = x_batch.shape
             y_shape = y_batch.shape
@@ -353,7 +359,8 @@ if __name__ == "__main__":
             gnb3.fit(X_train[:,0:6], Y_train)
             gnb4.fit(X_train[:,0:8], Y_train)
             gnb5.fit(X_train, Y_train)
-            
+
+            '''
             tree1.fit(X_train[:,0:4], Y_train)
             tree2.fit(X_train[:,0:5], Y_train)
             tree3.fit(X_train[:,0:6], Y_train)
@@ -365,6 +372,7 @@ if __name__ == "__main__":
             neigh3.fit(X_train[:,0:6], Y_train)
             neigh4.fit(X_train[:,0:8], Y_train)
             neigh5.fit(X_train, Y_train)
+            '''
 
     # HERE models ARE COMPLETELY TRAINED
     
@@ -380,7 +388,9 @@ if __name__ == "__main__":
         cPickle.dump(gnb4, fid)
     with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(gnb5, fid)
-        
+
+
+    '''
     with open('tree1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(tree1, fid)
     with open('tree2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -402,7 +412,7 @@ if __name__ == "__main__":
         cPickle.dump(neigh4, fid)
     with open('neigh5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
         cPickle.dump(neigh5, fid)
-
+    '''
         
     
 
@@ -429,6 +439,7 @@ if __name__ == "__main__":
     CM_full_gnb4 = np.zeros((4, 4))
     CM_full_gnb5 = np.zeros((4, 4))
 
+    '''
     CM_full_tree1 = np.zeros((4, 4))
     CM_full_tree2 = np.zeros((4, 4))
     CM_full_tree3 = np.zeros((4, 4))
@@ -440,7 +451,7 @@ if __name__ == "__main__":
     CM_full_neigh3 = np.zeros((4, 4))
     CM_full_neigh4 = np.zeros((4, 4))
     CM_full_neigh5 = np.zeros((4, 4))
-
+    '''
 
     for x_va, y_va in tqdm(val_loader): # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
         iterator_val += 1
@@ -490,6 +501,7 @@ if __name__ == "__main__":
             Y_pred_gnb4 = gnb4.predict(X_val)
             Y_pred_gnb5 = gnb5.predict(X_val)
 
+            '''
             Y_pred_tree1 = tree1.predict(X_val)
             Y_pred_tree2 = tree2.predict(X_val)
             Y_pred_tree3 = tree3.predict(X_val)
@@ -501,8 +513,7 @@ if __name__ == "__main__":
             Y_pred_neigh3 = neigh3.predict(X_val)
             Y_pred_neigh4 = neigh4.predict(X_val)
             Y_pred_neigh5 = neigh5.predict(X_val)
-
-
+            '''
 
             #Y_pred_svm = svm.predict(X_val)
             #Y_pred_sgd = sgd.predict(X_val)
@@ -519,7 +530,7 @@ if __name__ == "__main__":
             cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=[0, 1, 2, 3])
             CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
 
-
+            '''
             cm_tree1 = confusion_matrix(Y_val, Y_pred_tree1, labels=[0, 1, 2, 3])
             CM_full_tree1 = CM_full_tree1 + cm_tree1
             cm_tree2 = confusion_matrix(Y_val, Y_pred_tree2, labels=[0, 1, 2, 3])
@@ -542,6 +553,8 @@ if __name__ == "__main__":
             CM_full_neigh4 = CM_full_neigh4 + cm_neigh4
             cm_neigh5 = confusion_matrix(Y_val, Y_pred_neigh5, labels=[0, 1, 2, 3])
             CM_full_neigh5 = CM_full_neigh5 + cm_neigh5
+            '''
+
             # compute f1-score for each batch
             #f1 = f1_score(Y_val, Y_pred)
             #f1_full += f1
@@ -563,6 +576,8 @@ if __name__ == "__main__":
     np.savetxt('cm_full_gnb4.csv', CM_full_gnb4, delimiter=',')
     np.savetxt('cm_full_gnb5.csv', CM_full_gnb5, delimiter=',')
 
+
+    '''
     np.savetxt('cm_full_tree1.csv', CM_full_tree1, delimiter=',')
     np.savetxt('cm_full_tree2.csv', CM_full_tree2, delimiter=',')
     np.savetxt('cm_full_tree3.csv', CM_full_tree3, delimiter=',')
@@ -574,7 +589,7 @@ if __name__ == "__main__":
     np.savetxt('cm_full_neigh3.csv', CM_full_neigh3, delimiter=',')
     np.savetxt('cm_full_neigh4.csv', CM_full_neigh4, delimiter=',')
     np.savetxt('cm_full_neigh5.csv', CM_full_neigh5, delimiter=',')
-
+    '''
 
 
 
