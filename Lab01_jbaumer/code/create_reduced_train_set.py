@@ -22,9 +22,9 @@ Groups work like dictionaries, and datasets work like NumPy arrays
 
 
 # VARIABLES
-N_IMAGES = 2
+N_IMAGES = 20
 FILENAME_FULL = "../datasets/dataset_train.h5"
-FILENAME_DEVEL = "../datasets/dataset_train_devel.h5"
+FILENAME_DEVEL = "../datasets/dataset_train_decide_20imgs.h5"
 
 
 if os.path.isfile(FILENAME_DEVEL):
