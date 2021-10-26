@@ -151,6 +151,7 @@ if __name__ == "__main__":
 
     for x, y in tqdm(train_loader): # tqdm: make loops show a smart progress meter by wrapping any iterable with tqdm(iterable)
         train_loader_loop += 1
+        print('train loader loop: ', train_loader_loop)
         x = np.transpose(x, [0, 2, 3, 1])  # swap shapes so that afterward shape = (nmbr_imgs_in_batch, size_x, size_y, nmbr_channels)
         x = x.numpy()  #  x is not yet ndarray - convert x from pytorch tensor to ndarray
 
