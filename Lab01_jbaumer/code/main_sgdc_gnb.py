@@ -207,7 +207,7 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('sgdc1_classifier26_22.pkl') and not os.path.isfile('gnb1_classifier26_22.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('sgdc1_classifier27_19.pkl') and not os.path.isfile('gnb1_classifier27_19.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
@@ -381,23 +381,23 @@ if __name__ == "__main__":
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
-        gnb1 = cPickle.load(open('gnb1_classifier26_22.pkl', 'rb'))
-        gnb2 = cPickle.load(open('gnb2_classifier26_22.pkl', 'rb'))
-        gnb3 = cPickle.load(open('gnb3_classifier26_22.pkl', 'rb'))
-        gnb4 = cPickle.load(open('gnb4_classifier26_22.pkl', 'rb'))
-        gnb5 = cPickle.load(open('gnb5_classifier26_22.pkl', 'rb'))
+        gnb1 = cPickle.load(open('gnb1_classifier27_19.pkl', 'rb'))
+        gnb2 = cPickle.load(open('gnb2_classifier27_19.pkl', 'rb'))
+        gnb3 = cPickle.load(open('gnb3_classifier27_19.pkl', 'rb'))
+        gnb4 = cPickle.load(open('gnb4_classifier27_19.pkl', 'rb'))
+        gnb5 = cPickle.load(open('gnb5_classifier27_19.pkl', 'rb'))
 
-        sgdc1 = cPickle.load(open('sgdc1_classifier26_22.pkl', 'rb'))
-        sgdc2 = cPickle.load(open('sgdc2_classifier26_22.pkl', 'rb'))
-        sgdc3 = cPickle.load(open('sgdc3_classifier26_22.pkl', 'rb'))
-        sgdc4 = cPickle.load(open('sgdc4_classifier26_22.pkl', 'rb'))
-        sgdc5 = cPickle.load(open('sgdc5_classifier26_22.pkl', 'rb'))
+        sgdc1 = cPickle.load(open('sgdc1_classifier27_19.pkl', 'rb'))
+        sgdc2 = cPickle.load(open('sgdc2_classifier27_19.pkl', 'rb'))
+        sgdc3 = cPickle.load(open('sgdc3_classifier27_19.pkl', 'rb'))
+        sgdc4 = cPickle.load(open('sgdc4_classifier27_19.pkl', 'rb'))
+        sgdc5 = cPickle.load(open('sgdc5_classifier27_19.pkl', 'rb'))
 
     # HERE models ARE COMPLETELY TRAINED
 
     now = datetime.now()
 
-    if not os.path.isfile('gnb1_classifier26_22.pkl'):
+    if not os.path.isfile('gnb1_classifier27_19.pkl'):
         #Save the classifiers todo: this might duplicate models even if they already exist
         with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb1, fid)
@@ -410,7 +410,7 @@ if __name__ == "__main__":
         with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb5, fid)
 
-    if not os.path.isfile('sgdc1_classifier26_22.pkl'):
+    if not os.path.isfile('sgdc1_classifier27_19.pkl'):
         with open('sgdc1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(sgdc1, fid)
         with open('sgdc2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -427,18 +427,18 @@ if __name__ == "__main__":
 
     iterator_val = 0
 
-    CM_full_gnb1 = np.zeros((4,4))
-    CM_full_gnb2 = np.zeros((4, 4))
-    CM_full_gnb3 = np.zeros((4, 4))
-    CM_full_gnb4 = np.zeros((4, 4))
-    CM_full_gnb5 = np.zeros((4, 4))
+    CM_full_gnb1 = np.zeros((3, 3))
+    CM_full_gnb2 = np.zeros((3, 3))
+    CM_full_gnb3 = np.zeros((3, 3))
+    CM_full_gnb4 = np.zeros((3, 3))
+    CM_full_gnb5 = np.zeros((3, 3))
 
 
-    CM_full_sgdc1 = np.zeros((4, 4))
-    CM_full_sgdc2 = np.zeros((4, 4))
-    CM_full_sgdc3 = np.zeros((4, 4))
-    CM_full_sgdc4 = np.zeros((4, 4))
-    CM_full_sgdc5 = np.zeros((4, 4))
+    CM_full_sgdc1 = np.zeros((3, 3))
+    CM_full_sgdc2 = np.zeros((3, 3))
+    CM_full_sgdc3 = np.zeros((3, 3))
+    CM_full_sgdc4 = np.zeros((3, 3))
+    CM_full_sgdc5 = np.zeros((3, 3))
 
     for x_va, y_va in tqdm(
             val_loader):  # if windowsize of val_loader is set to full size (10980), then length of this loop = batch_size of dataLoader
