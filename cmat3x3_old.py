@@ -55,12 +55,19 @@ def compute_metrics(cmat):
     overall_accuracy = (sumTP + sumTN)/(sumTP + sumFP + sumFN + sumTN)
     
     return overall_accuracy, precisions, recalls, f1s
-    
+
+FILEPATH = 'cm_full_gnb1.csv'
+
 #Example
 confusionmat = np.array([[150,21,2, 17], [12,730,1, 5], [5,0,83,0], [25,30,4, 350]])
 confusionmat = confusionmat = np.transpose(confusionmat)
 cmsnip = confusionmat[:3,:3]
 print(cmsnip)
+
+# evaluation gnb
+CM = np.genfromtxt(FILEPATH, delimiter=',')
+
+
 
 overall_accuracy, precisions, recalls, f1s = compute_metrics(cmsnip)
 print(overall_accuracy)
