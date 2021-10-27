@@ -204,12 +204,19 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('sgdc1_classifier26_20.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('sgdc1_classifier26_23.pkl') and not os.path.isfile('gnb1_classifier26_23.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
         # create initialization of certain ML model
+        ## Naive Bayes:
+        gnb1 = GaussianNB()
+        gnb2 = GaussianNB()
+        gnb3 = GaussianNB()
+        gnb4 = GaussianNB()
+        gnb5 = GaussianNB()
 
+        # sgdc
         sgdc1 = SGDClassifier()
         sgdc2 = SGDClassifier()
         sgdc3 = SGDClassifier()
@@ -310,7 +317,12 @@ if __name__ == "__main__":
                 X_train = scaler.fit_transform(X_train)
 
                 # train model
-
+                # Naive Bayes
+                gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
+                gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
+                gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
+                gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
+                gnb5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
 
                 # sgdc
                 sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
@@ -322,6 +334,12 @@ if __name__ == "__main__":
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
+        gnb1 = cPickle.load(open('gnb1_classifier26_13.pkl', 'rb'))
+        gnb2 = cPickle.load(open('gnb2_classifier26_13.pkl', 'rb'))
+        gnb3 = cPickle.load(open('gnb3_classifier26_13.pkl', 'rb'))
+        gnb4 = cPickle.load(open('gnb4_classifier26_13.pkl', 'rb'))
+        gnb5 = cPickle.load(open('gnb5_classifier26_13.pkl', 'rb'))
+
         sgdc1 = cPickle.load(open('sgdc1_classifier26_20.pkl', 'rb'))
         sgdc2 = cPickle.load(open('sgdc2_classifier26_20.pkl', 'rb'))
         sgdc3 = cPickle.load(open('sgdc3_classifier26_20.pkl', 'rb'))
@@ -332,7 +350,20 @@ if __name__ == "__main__":
 
     now = datetime.now()
 
-    if not os.path.isfile('sgdc1_classifier26_20.pkl'):
+    if not os.path.isfile('gnb1_classifier26_23.pkl'):
+        #Save the classifiers todo: this might duplicate models even if they already exist
+        with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(gnb1, fid)
+        with open('gnb2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(gnb2, fid)
+        with open('gnb3_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(gnb3, fid)
+        with open('gnb4_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(gnb4, fid)
+        with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
+            cPickle.dump(gnb5, fid)
+
+    if not os.path.isfile('sgdc1_classifier26_23.pkl'):
         with open('sgdc1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(sgdc1, fid)
         with open('sgdc2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -348,6 +379,13 @@ if __name__ == "__main__":
     print('VALIDATION STARTING ...')
 
     iterator_val = 0
+
+    CM_full_gnb1 = np.zeros((4,4))
+    CM_full_gnb2 = np.zeros((4, 4))
+    CM_full_gnb3 = np.zeros((4, 4))
+    CM_full_gnb4 = np.zeros((4, 4))
+    CM_full_gnb5 = np.zeros((4, 4))
+
 
     CM_full_sgdc1 = np.zeros((4, 4))
     CM_full_sgdc2 = np.zeros((4, 4))
@@ -439,12 +477,30 @@ if __name__ == "__main__":
             ## TODO
             # Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
 
+            Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
+            Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
+            Y_pred_gnb3 = gnb3.predict(X_val[:, 0:6])
+            Y_pred_gnb4 = gnb4.predict(X_val[:, 0:8])
+            Y_pred_gnb5 = gnb5.predict(X_val)
 
             Y_pred_sgdc1 = sgdc1.predict(X_val[:, 0:4])
             Y_pred_sgdc2 = sgdc2.predict(X_val[:, 0:5])
             Y_pred_sgdc3 = sgdc3.predict(X_val[:, 0:6])
             Y_pred_sgdc4 = sgdc4.predict(X_val[:, 0:8])
             Y_pred_sgdc5 = sgdc5.predict(X_val)
+
+
+
+            cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=[0, 1, 2, 3])
+            CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
+            cm_gnb2 = confusion_matrix(Y_val, Y_pred_gnb2, labels=[0, 1, 2, 3])
+            CM_full_gnb2 = CM_full_gnb2 + cm_gnb2
+            cm_gnb3 = confusion_matrix(Y_val, Y_pred_gnb3, labels=[0, 1, 2, 3])
+            CM_full_gnb3 = CM_full_gnb3 + cm_gnb3
+            cm_gnb4 = confusion_matrix(Y_val, Y_pred_gnb4, labels=[0, 1, 2, 3])
+            CM_full_gnb4 = CM_full_gnb4 + cm_gnb4
+            cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=[0, 1, 2, 3])
+            CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
 
 
             cm_sgdc1 = confusion_matrix(Y_val, Y_pred_sgdc1, labels=[0, 1, 2, 3])
@@ -457,6 +513,14 @@ if __name__ == "__main__":
             CM_full_sgdc4 = CM_full_sgdc4 + cm_sgdc4
             cm_sgdc5 = confusion_matrix(Y_val, Y_pred_sgdc5, labels=[0, 1, 2, 3])
             CM_full_sgdc5 = CM_full_sgdc5 + cm_sgdc5
+
+
+    print('CONFUSION MATRICES COMPUTED - SAVING CONFUSION MATRICES ...')
+    np.savetxt('cm_full_gnb1.csv', CM_full_gnb1, delimiter=',')
+    np.savetxt('cm_full_gnb2.csv', CM_full_gnb2, delimiter=',')
+    np.savetxt('cm_full_gnb3.csv', CM_full_gnb3, delimiter=',')
+    np.savetxt('cm_full_gnb4.csv', CM_full_gnb4, delimiter=',')
+    np.savetxt('cm_full_gnb5.csv', CM_full_gnb5, delimiter=',')
 
 
     np.savetxt('cm_full_sgdc1.csv', CM_full_sgdc1, delimiter=',')
