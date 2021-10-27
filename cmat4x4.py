@@ -40,7 +40,7 @@ def compute_metrics(cmat):
     f12 = calc_f1(TP2, FP2, FN2)
     
     TP3 = cmat[3, 3]
-    FP3 = cmat[0, 0] + cmat[1, 0] + cmat[2, 0]
+    FP3 = cmat[0, 3] + cmat[1, 3] + cmat[2, 3]
     FN3 = cmat[3, 0] + cmat[3, 1] + cmat[3, 2]
     precision3 = calc_precision(TP3, FP3)
     recall3 = calc_recall(TP3, FN3)
