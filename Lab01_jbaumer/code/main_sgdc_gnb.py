@@ -27,6 +27,7 @@ from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from skmultiflow.trees import HoeffdingTree
 from skmultiflow.lazy import KNNClassifier
+from numpy import ma
 
 
 ### Functions
@@ -86,7 +87,6 @@ def calc_ndvi(NIR, RED):
     # imputer = KNNImputer(n_neighbors = 50)
     # NDVI = imputer.fit_transform(NDVI)
     return NDVI
-
 
 ### CLASSES
 
@@ -179,7 +179,10 @@ FILE_TRAIN = '../datasets/dataset_train_devel.h5'
 FILE_VAL = '../datasets/dataset_val.h5'
 FILE_TEST = '../datasets/dataset_test.h5'
 
+CLASSES = [0, 1, 2]
+
 if __name__ == "__main__":
+    print('the correct file')
     # dealing with division by nan or 0
     np.seterr(divide='ignore', invalid='ignore')
 
@@ -204,7 +207,7 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('sgdc1_classifier26_23.pkl') and not os.path.isfile('gnb1_classifier26_23.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('sgdc1_classifier27_099.pkl') and not os.path.isfile('gnb1_classifier27_099.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
@@ -241,6 +244,15 @@ if __name__ == "__main__":
                 # print(f'training with image {i} of {len(x)} of train loader loop no: {train_loader_loop}')
                 x_batch = x[i]
                 y_batch = y[i]
+
+
+                #nodata_mask = y_batch!=3
+                #x_batch = x_batch[nodata_mask, :]
+                #y_batch = y_batch[nodata_mask]
+
+                # if y batch only contains no data (99, resp. 3)
+                # so after masking it's an empty array
+                #if y_batch.shape != (0,):
 
                 # FEATURE EXTRACTION
                 # Grayscale as feature, adds 1 feat
@@ -283,9 +295,9 @@ if __name__ == "__main__":
                 x_batch = np.nan_to_num(x_batch)
 
                 # could be commented
-                nans = np.any(np.isnan(x_batch))
-                print(nans)
-                print()
+                #nans = np.any(np.isnan(x_batch))
+                #print(nans)
+                #print()
 
                 # define shapes
                 x_shape = x_batch.shape
@@ -303,6 +315,7 @@ if __name__ == "__main__":
                     x_shape_resized = x_batch_chn.shape
                     X_lst.append(x_batch_chn)
 
+
                 y_batch.resize(y_shape[0] * y_shape[1], 1)
                 Y_lst.append(y_batch)
 
@@ -312,45 +325,65 @@ if __name__ == "__main__":
                 Y_train = np.array(Y_lst).T[
                     0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
+
+
+
+                # do masking only if there is no_data
+                if np.max(Y_train) == 3:
+                    X_train_masked = ma.zeros(X_train.shape)
+                    Y_train_masked = ma.masked_where(Y_train == 3, Y_train)
+                    mask_train = Y_train_masked.mask
+
+                    # mask each column of X_train and replace X_train column with its masked corresponding
+                    for col in range(X_train[:].shape[1]):
+                        col_vec = X_train[:, col]
+                        col_vec_masked = ma.masked_array(col_vec, mask=mask_train)
+                        X_train_masked[:, col] = col_vec_masked
+                    #stack masked cols together
+                    #no_data = np.where(Y_train == 3)
+                    X_train = X_train_masked
+                    Y_train = Y_train_masked
+
+
                 # normalizing and standardizing the feature vectors
                 scaler = StandardScaler()
                 X_train = scaler.fit_transform(X_train)
 
                 # train model
                 # Naive Bayes
-                gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
-                gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
-                gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
-                gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
-                gnb5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
+                gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
+                gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
+                gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
+                gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
+                gnb5.partial_fit(X_train, Y_train, classes=CLASSES)
 
                 # sgdc
-                sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=[0, 1, 2, 3])
-                sgdc2.partial_fit(X_train[:, 0:5], Y_train, classes=[0, 1, 2, 3])
-                sgdc3.partial_fit(X_train[:, 0:6], Y_train, classes=[0, 1, 2, 3])
-                sgdc4.partial_fit(X_train[:, 0:8], Y_train, classes=[0, 1, 2, 3])
-                sgdc5.partial_fit(X_train, Y_train, classes=[0, 1, 2, 3])
+                sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
+                sgdc2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
+                sgdc3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
+                sgdc4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
+                sgdc5.partial_fit(X_train, Y_train, classes=CLASSES)
 
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
-        gnb1 = cPickle.load(open('gnb1_classifier26_13.pkl', 'rb'))
-        gnb2 = cPickle.load(open('gnb2_classifier26_13.pkl', 'rb'))
-        gnb3 = cPickle.load(open('gnb3_classifier26_13.pkl', 'rb'))
-        gnb4 = cPickle.load(open('gnb4_classifier26_13.pkl', 'rb'))
-        gnb5 = cPickle.load(open('gnb5_classifier26_13.pkl', 'rb'))
+        gnb1 = cPickle.load(open('gnb1_classifier27_09.pkl', 'rb'))
+        gnb2 = cPickle.load(open('gnb2_classifier27_09.pkl', 'rb'))
+        gnb3 = cPickle.load(open('gnb3_classifier27_09.pkl', 'rb'))
+        gnb4 = cPickle.load(open('gnb4_classifier27_09.pkl', 'rb'))
+        gnb5 = cPickle.load(open('gnb5_classifier27_09.pkl', 'rb'))
 
-        sgdc1 = cPickle.load(open('sgdc1_classifier26_20.pkl', 'rb'))
-        sgdc2 = cPickle.load(open('sgdc2_classifier26_20.pkl', 'rb'))
-        sgdc3 = cPickle.load(open('sgdc3_classifier26_20.pkl', 'rb'))
-        sgdc4 = cPickle.load(open('sgdc4_classifier26_20.pkl', 'rb'))
-        sgdc5 = cPickle.load(open('sgdc5_classifier26_20.pkl', 'rb'))
+        sgdc1 = cPickle.load(open('sgdc1_classifier27_09.pkl', 'rb'))
+        sgdc2 = cPickle.load(open('sgdc2_classifier27_09.pkl', 'rb'))
+        sgdc3 = cPickle.load(open('sgdc3_classifier27_09.pkl', 'rb'))
+        sgdc4 = cPickle.load(open('sgdc4_classifier27_09.pkl', 'rb'))
+        sgdc5 = cPickle.load(open('sgdc5_classifier27_09.pkl', 'rb'))
 
     # HERE models ARE COMPLETELY TRAINED
 
     now = datetime.now()
 
-    if not os.path.isfile('gnb1_classifier26_23.pkl'):
+    if not os.path.isfile('gnb1_classifier27_09.pkl'):
         #Save the classifiers todo: this might duplicate models even if they already exist
         with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb1, fid)
@@ -363,7 +396,7 @@ if __name__ == "__main__":
         with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb5, fid)
 
-    if not os.path.isfile('sgdc1_classifier26_23.pkl'):
+    if not os.path.isfile('sgdc1_classifier27_09.pkl'):
         with open('sgdc1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(sgdc1, fid)
         with open('sgdc2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -474,8 +507,25 @@ if __name__ == "__main__":
             Y_val = np.array(Y_val_lst).T[
                 0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
-            ## TODO
-            # Make prediciton per model (5x3 models) and confusion matrices, rememeber to aggregate per model
+
+            # do masking only if there is no_data
+
+            if np.max(Y_val) == 3:
+                X_val_masked = ma.zeros(X_val.shape)
+                Y_val_masked = ma.masked_where(Y_val == 3, Y_val)
+                mask_val = Y_val_masked.mask
+
+                # mask each column of X_train and replace X_train column with its masked corresponding
+                for col in range(X_val[:].shape[1]):
+                    col_vec = X_val[:, col]
+                    col_vec_masked = ma.masked_array(col_vec, mask=mask_val)
+                    X_val_masked[:, col] = col_vec_masked
+                # stack masked cols together
+                # no_data = np.where(Y_train == 3)
+                X_train = X_val_masked
+                Y_train = Y_val_masked
+
+
 
             Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
             Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
