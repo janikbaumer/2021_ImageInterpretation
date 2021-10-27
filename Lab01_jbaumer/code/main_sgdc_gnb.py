@@ -175,7 +175,7 @@ class SatelliteSet(VisionDataset):
 cwd = os.getcwd()
 # FILE_TRAIN = '../datasets/dataset_train_reduced.h5'
 FILE_TRAIN = '../datasets/dataset_train_devel.h5'
-# FILE_TRAIN = '../datasets/dataset_train_decide_20imgs.h5'
+FILE_TRAIN = '../datasets/dataset_train_decide_20imgs.h5'
 FILE_VAL = '../datasets/dataset_val.h5'
 FILE_TEST = '../datasets/dataset_test.h5'
 
@@ -207,7 +207,7 @@ if __name__ == "__main__":
                              num_workers=0,
                              shuffle=False)
 
-    if not os.path.isfile('sgdc1_classifier27_099.pkl') and not os.path.isfile('gnb1_classifier27_099.pkl'):  # if this file does not yet exist
+    if not os.path.isfile('sgdc1_classifier26_22.pkl') and not os.path.isfile('gnb1_classifier26_22.pkl'):  # if this file does not yet exist
 
         print('INTIALIZATION STARTING ...')
 
@@ -328,62 +328,76 @@ if __name__ == "__main__":
 
 
 
+
                 # do masking only if there is no_data
                 if np.max(Y_train) == 3:
-                    X_train_masked = ma.zeros(X_train.shape)
                     Y_train_masked = ma.masked_where(Y_train == 3, Y_train)
+                    Y_train_masked_compressed = Y_train_masked.compressed()
+                    n_rows = int(Y_train_masked_compressed.shape[0])
+
+                    X_train_masked = ma.zeros(X_train.shape)
                     mask_train = Y_train_masked.mask
 
                     # mask each column of X_train and replace X_train column with its masked corresponding
                     for col in range(X_train[:].shape[1]):
                         col_vec = X_train[:, col]
                         col_vec_masked = ma.masked_array(col_vec, mask=mask_train)
-                        X_train_masked[:, col] = col_vec_masked
+                        X_train_masked[:, col] = col_vec_masked.compressed().resize((n_rows, 1))
                     #stack masked cols together
                     #no_data = np.where(Y_train == 3)
-                    X_train = X_train_masked
-                    Y_train = Y_train_masked
+
+                    #X_train = X_train_masked
+                    #Y_train = Y_train_masked
 
 
-                # normalizing and standardizing the feature vectors
-                scaler = StandardScaler()
-                X_train = scaler.fit_transform(X_train)
+                    Y_train = Y_train_masked_compressed
+                    X_train = X_train_masked[~np.isnan(X_train_masked)]
 
-                # train model
-                # Naive Bayes
-                gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
-                gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
-                gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
-                gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
-                gnb5.partial_fit(X_train, Y_train, classes=CLASSES)
+                #if mask_train.all():
+                    #break
 
-                # sgdc
-                sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
-                sgdc2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
-                sgdc3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
-                sgdc4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
-                sgdc5.partial_fit(X_train, Y_train, classes=CLASSES)
+
+                    #X_train = X_train_flat.
+                if not X_train.shape == (0,) and not Y_train.shape == (0,):
+                    # normalizing and standardizing the feature vectors
+                    scaler = StandardScaler()
+                    X_train = scaler.fit_transform(X_train)
+
+                    # train model
+                    # Naive Bayes
+                    gnb1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
+                    gnb2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
+                    gnb3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
+                    gnb4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
+                    gnb5.partial_fit(X_train, Y_train, classes=CLASSES)
+
+                    # sgdc
+                    sgdc1.partial_fit(X_train[:, 0:4], Y_train, classes=CLASSES)
+                    sgdc2.partial_fit(X_train[:, 0:5], Y_train, classes=CLASSES)
+                    sgdc3.partial_fit(X_train[:, 0:6], Y_train, classes=CLASSES)
+                    sgdc4.partial_fit(X_train[:, 0:8], Y_train, classes=CLASSES)
+                    sgdc5.partial_fit(X_train, Y_train, classes=CLASSES)
 
 
     else:  # if those files exist, read them from disk
         print('FILES ALREADY EXISTS - READING MODELS FROM PICKLE FILES ...')
-        gnb1 = cPickle.load(open('gnb1_classifier27_09.pkl', 'rb'))
-        gnb2 = cPickle.load(open('gnb2_classifier27_09.pkl', 'rb'))
-        gnb3 = cPickle.load(open('gnb3_classifier27_09.pkl', 'rb'))
-        gnb4 = cPickle.load(open('gnb4_classifier27_09.pkl', 'rb'))
-        gnb5 = cPickle.load(open('gnb5_classifier27_09.pkl', 'rb'))
+        gnb1 = cPickle.load(open('gnb1_classifier26_22.pkl', 'rb'))
+        gnb2 = cPickle.load(open('gnb2_classifier26_22.pkl', 'rb'))
+        gnb3 = cPickle.load(open('gnb3_classifier26_22.pkl', 'rb'))
+        gnb4 = cPickle.load(open('gnb4_classifier26_22.pkl', 'rb'))
+        gnb5 = cPickle.load(open('gnb5_classifier26_22.pkl', 'rb'))
 
-        sgdc1 = cPickle.load(open('sgdc1_classifier27_09.pkl', 'rb'))
-        sgdc2 = cPickle.load(open('sgdc2_classifier27_09.pkl', 'rb'))
-        sgdc3 = cPickle.load(open('sgdc3_classifier27_09.pkl', 'rb'))
-        sgdc4 = cPickle.load(open('sgdc4_classifier27_09.pkl', 'rb'))
-        sgdc5 = cPickle.load(open('sgdc5_classifier27_09.pkl', 'rb'))
+        sgdc1 = cPickle.load(open('sgdc1_classifier26_22.pkl', 'rb'))
+        sgdc2 = cPickle.load(open('sgdc2_classifier26_22.pkl', 'rb'))
+        sgdc3 = cPickle.load(open('sgdc3_classifier26_22.pkl', 'rb'))
+        sgdc4 = cPickle.load(open('sgdc4_classifier26_22.pkl', 'rb'))
+        sgdc5 = cPickle.load(open('sgdc5_classifier26_22.pkl', 'rb'))
 
     # HERE models ARE COMPLETELY TRAINED
 
     now = datetime.now()
 
-    if not os.path.isfile('gnb1_classifier27_09.pkl'):
+    if not os.path.isfile('gnb1_classifier26_22.pkl'):
         #Save the classifiers todo: this might duplicate models even if they already exist
         with open('gnb1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb1, fid)
@@ -396,7 +410,7 @@ if __name__ == "__main__":
         with open('gnb5_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(gnb5, fid)
 
-    if not os.path.isfile('sgdc1_classifier27_09.pkl'):
+    if not os.path.isfile('sgdc1_classifier26_22.pkl'):
         with open('sgdc1_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
             cPickle.dump(sgdc1, fid)
         with open('sgdc2_classifier' + now.strftime("%d_%H") + '.pkl', 'wb') as fid:
@@ -490,7 +504,7 @@ if __name__ == "__main__":
             X_val_lst = []
             Y_val_lst = []
 
-            # create feature matrix X_train (can be used for ML model later)
+            # create feature matrix X_va (can be used for ML model later)
             # for each channel, stack features (e.g. R,G,B,NIR intensities) to column vector
             for chn in range(x_va_shape[-1]):
                 x_va_batch_chn = x_va_batch[:, :, chn]
@@ -507,62 +521,62 @@ if __name__ == "__main__":
             Y_val = np.array(Y_val_lst).T[
                 0].ravel()  # same as above, plus ravel() to convert from col vector to 1D array (needed for some ML models)
 
-
             # do masking only if there is no_data
-
             if np.max(Y_val) == 3:
-                X_val_masked = ma.zeros(X_val.shape)
                 Y_val_masked = ma.masked_where(Y_val == 3, Y_val)
+                Y_val_masked_compressed = Y_val_masked.compressed()
+                n_rows = int(Y_val_masked_compressed.shape[0])
+
+                X_val_masked = ma.zeros(X_val.shape)
                 mask_val = Y_val_masked.mask
 
-                # mask each column of X_train and replace X_train column with its masked corresponding
+                # mask each column of X_val and replace X_val column with its masked corresponding
                 for col in range(X_val[:].shape[1]):
                     col_vec = X_val[:, col]
                     col_vec_masked = ma.masked_array(col_vec, mask=mask_val)
-                    X_val_masked[:, col] = col_vec_masked
-                # stack masked cols together
-                # no_data = np.where(Y_train == 3)
-                X_train = X_val_masked
-                Y_train = Y_val_masked
+                    X_val_masked[:, col] = col_vec_masked.compressed().resize((n_rows, 1))
+
+                Y_val = Y_val_masked_compressed
+                X_val = X_val_masked[~np.isnan(X_val_masked)]
+
+
+            if not X_val.shape == (0,) and not Y_val.shape == (0,):
+                Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
+                Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
+                Y_pred_gnb3 = gnb3.predict(X_val[:, 0:6])
+                Y_pred_gnb4 = gnb4.predict(X_val[:, 0:8])
+                Y_pred_gnb5 = gnb5.predict(X_val)
+
+                Y_pred_sgdc1 = sgdc1.predict(X_val[:, 0:4])
+                Y_pred_sgdc2 = sgdc2.predict(X_val[:, 0:5])
+                Y_pred_sgdc3 = sgdc3.predict(X_val[:, 0:6])
+                Y_pred_sgdc4 = sgdc4.predict(X_val[:, 0:8])
+                Y_pred_sgdc5 = sgdc5.predict(X_val)
 
 
 
-            Y_pred_gnb1 = gnb1.predict(X_val[:, 0:4])
-            Y_pred_gnb2 = gnb2.predict(X_val[:, 0:5])
-            Y_pred_gnb3 = gnb3.predict(X_val[:, 0:6])
-            Y_pred_gnb4 = gnb4.predict(X_val[:, 0:8])
-            Y_pred_gnb5 = gnb5.predict(X_val)
-
-            Y_pred_sgdc1 = sgdc1.predict(X_val[:, 0:4])
-            Y_pred_sgdc2 = sgdc2.predict(X_val[:, 0:5])
-            Y_pred_sgdc3 = sgdc3.predict(X_val[:, 0:6])
-            Y_pred_sgdc4 = sgdc4.predict(X_val[:, 0:8])
-            Y_pred_sgdc5 = sgdc5.predict(X_val)
-
+                cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=CLASSES)
+                CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
+                cm_gnb2 = confusion_matrix(Y_val, Y_pred_gnb2, labels=CLASSES)
+                CM_full_gnb2 = CM_full_gnb2 + cm_gnb2
+                cm_gnb3 = confusion_matrix(Y_val, Y_pred_gnb3, labels=CLASSES)
+                CM_full_gnb3 = CM_full_gnb3 + cm_gnb3
+                cm_gnb4 = confusion_matrix(Y_val, Y_pred_gnb4, labels=CLASSES)
+                CM_full_gnb4 = CM_full_gnb4 + cm_gnb4
+                cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=CLASSES)
+                CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
 
 
-            cm_gnb1 = confusion_matrix(Y_val, Y_pred_gnb1, labels=[0, 1, 2, 3])
-            CM_full_gnb1 = CM_full_gnb1 + cm_gnb1
-            cm_gnb2 = confusion_matrix(Y_val, Y_pred_gnb2, labels=[0, 1, 2, 3])
-            CM_full_gnb2 = CM_full_gnb2 + cm_gnb2
-            cm_gnb3 = confusion_matrix(Y_val, Y_pred_gnb3, labels=[0, 1, 2, 3])
-            CM_full_gnb3 = CM_full_gnb3 + cm_gnb3
-            cm_gnb4 = confusion_matrix(Y_val, Y_pred_gnb4, labels=[0, 1, 2, 3])
-            CM_full_gnb4 = CM_full_gnb4 + cm_gnb4
-            cm_gnb5 = confusion_matrix(Y_val, Y_pred_gnb5, labels=[0, 1, 2, 3])
-            CM_full_gnb5 = CM_full_gnb5 + cm_gnb5
-
-
-            cm_sgdc1 = confusion_matrix(Y_val, Y_pred_sgdc1, labels=[0, 1, 2, 3])
-            CM_full_sgdc1 = CM_full_sgdc1 + cm_sgdc1
-            cm_sgdc2 = confusion_matrix(Y_val, Y_pred_sgdc2, labels=[0, 1, 2, 3])
-            CM_full_sgdc2 = CM_full_sgdc2 + cm_sgdc2
-            cm_sgdc3 = confusion_matrix(Y_val, Y_pred_sgdc3, labels=[0, 1, 2, 3])
-            CM_full_sgdc3 = CM_full_sgdc3 + cm_sgdc3
-            cm_sgdc4 = confusion_matrix(Y_val, Y_pred_sgdc4, labels=[0, 1, 2, 3])
-            CM_full_sgdc4 = CM_full_sgdc4 + cm_sgdc4
-            cm_sgdc5 = confusion_matrix(Y_val, Y_pred_sgdc5, labels=[0, 1, 2, 3])
-            CM_full_sgdc5 = CM_full_sgdc5 + cm_sgdc5
+                cm_sgdc1 = confusion_matrix(Y_val, Y_pred_sgdc1, labels=CLASSES)
+                CM_full_sgdc1 = CM_full_sgdc1 + cm_sgdc1
+                cm_sgdc2 = confusion_matrix(Y_val, Y_pred_sgdc2, labels=CLASSES)
+                CM_full_sgdc2 = CM_full_sgdc2 + cm_sgdc2
+                cm_sgdc3 = confusion_matrix(Y_val, Y_pred_sgdc3, labels=CLASSES)
+                CM_full_sgdc3 = CM_full_sgdc3 + cm_sgdc3
+                cm_sgdc4 = confusion_matrix(Y_val, Y_pred_sgdc4, labels=CLASSES)
+                CM_full_sgdc4 = CM_full_sgdc4 + cm_sgdc4
+                cm_sgdc5 = confusion_matrix(Y_val, Y_pred_sgdc5, labels=CLASSES)
+                CM_full_sgdc5 = CM_full_sgdc5 + cm_sgdc5
 
 
     print('CONFUSION MATRICES COMPUTED - SAVING CONFUSION MATRICES ...')
