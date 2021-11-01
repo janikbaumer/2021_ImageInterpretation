@@ -73,19 +73,19 @@ for model in list(['gnb', 'sgdc']):
         overall_accuracy, precisions, recalls, f1s = compute_metrics(CM)
 
         print(f'loop {i+1}')
-        #print()
-        #print('overall accuracy: \n', overall_accuracy)
-        #print()
-        #print('precisions: \n', precisions)
-        #print()
-        #print('recalls: \n', recalls)
-        #print()
-        #print('f1 scores: \n', f1s)
+        print()
+        print('overall accuracy: \n', overall_accuracy)
+        print()
+        print('precisions: \n', precisions)
+        print()
+        print('recalls: \n', recalls)
+        print()
+        print('f1 scores: \n', f1s)
 
         print('avg of f1 scores: ', np.average(f1s))
         print('\n\n')
 '''
-
+'''
 TESTFILE = 'cm_full_gnb3_testSet.csv'
 # evaluation gnb
 CM = np.genfromtxt(TESTFILE, delimiter=',')
@@ -93,6 +93,26 @@ CM = np.genfromtxt(TESTFILE, delimiter=',')
 overall_accuracy, precisions, recalls, f1s = compute_metrics(CM)
 
 print('test set results: \n')
+print()
+print('overall accuracy: \n', overall_accuracy)
+print()
+print('precisions: \n', precisions)
+print()
+print('recalls: \n', recalls)
+print()
+print('f1 scores: \n', f1s)
+
+print('avg of f1 scores: ', np.average(f1s))
+print('\n\n')
+'''
+
+FILE_RANDOM = 'cm_full_random.csv'
+# evaluation random
+CM = np.genfromtxt(FILE_RANDOM, delimiter=',')
+
+overall_accuracy, precisions, recalls, f1s = compute_metrics(CM)
+
+print('random set results: \n')
 print()
 print('overall accuracy: \n', overall_accuracy)
 print()
