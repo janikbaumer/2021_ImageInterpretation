@@ -12,9 +12,8 @@ import platform
 from tqdm import tqdm
 from torchvision.datasets.vision import VisionDataset
 from torch.utils.data import DataLoader
-from sklearn.metrics import confusion_matrix
-from sklearn import metrics
-from sklearn.metrics import f1_score, cohen_kappa_score
+from sklearn.linear_model import SGDRegressor
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from scipy import ndimage
 from datetime import datetime
@@ -31,7 +30,8 @@ from numpy import ma
 
 # %%
 ### FUNCTIONS
-
+from RMSE_MAE import calculate_RMSE
+from RMSE_MAE import calculate_MAE
 # %%
 ### INITIALIZING
 # Defining variables for future use
@@ -47,14 +47,19 @@ elif current_os == 'Windows':
     cwd = os.getcwd()
     sep='\\'
 
+## USER DEFINED PARAMETERS
 
 DATA_SET = "train" #Name of input image. IDEA: Send one image at a time, be it test or train. Means running code 4 times for training and 2 for test. Attempt to reduce memory usage
-FEAT_SET = "features_" + DATA_SET + ".h5"
 VAL_SET = "..."
 
+# TODO: Select appropriate parameters. Do we do StandardScaler()?
+reg_mod = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
+
+###
+FEAT_SET = "features_" + DATA_SET + ".h5"
+FEAT_FILE = cwd+sep+FEAT_SET
 DATA_SET = "dataset_" + DATA_SET + ".h5"
 DATA_FILE = cwd+sep+'datasets'+sep+DATA_SET
-FEAT_FILE = cwd+sep+FEAT_SET
 VAL_FILE = cwd+sep+VAL_SET
 
 # %% Data loading
@@ -66,29 +71,20 @@ if __name__ == "__main__":
 
     # Load image
     dset = h5py.File(DATA_FILE, 'r')
-    GT = dset['GT']
+    Y = dset['GT']
 
     # Load feature vectors
     h5f_feat = h5py_File(FEAT_FILE, 'r')
-    features = h5f_feat['feature_vectors'][:]
-
-    # Creating feature vector X and ground truth Y
-    X = features
-    Y = GT
-
-    # Loading regressor model
-    regressor = ...
+    X = h5f_feat['feature_vectors'][:]
 
 # %% Training
 
-    regressor.fit(X, Y)
+    reg_mod.fit(X, Y)
 
     # Close h5 feat file
     h5f_feat.close()
 
 # %%
-
-    # HERE models ARE COMPLETELY TRAINED
 
     now = datetime.now()
 
@@ -104,8 +100,12 @@ if __name__ == "__main__":
 
 
     ## Predict the validation image
-    prediction = regressor.predict(val_features)
+    prediction = reg_mod.predict(val_features)
 
-    # TODO: Implement the metrics function here. Those Andreas hva coded.
+    ## Calculating RMSE
+    RMSE = calculate_RMSE(prediction, GT)
+
+    ## Calculating MAE
+    MAE = calculate_MAE(prediction, GT)
 
     # TODO: Save predicitons, and metrics. Use them later to plot images etc.
