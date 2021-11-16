@@ -49,12 +49,26 @@ elif current_os == 'Windows':
     cwd = os.getcwd()
     sep='\\'
 
-DATA_SET = "train" #Name of input image. IDEA: Send one image at a time, be it test or train. Means running code 4 times for training and 2 for test. Attempt to reduce memory usage
-FEAT_SET = "features_" + DATA_SET + ".h5"
+# FILE HIERARCHY INSTRUCTIONS Feature Extraction
+#   ...cwd
+#       -\datasets
+#           -\train
+#               -merged_img_tile1.h5
+#               -merged_img_tile2.h5
+#               -merged_img_tile3.h5
+#           -\val
+#               -merged_img_tile4.h5
+#           -\test
+#               -merged_img_tile5.h5
+#               -merged_img_tile6.h5
+#       -main_Features.py
+#       -main_Training.py
+#       -RMSE_MAE.py
 
-DATA_SET = "dataset_" + DATA_SET + ".h5"
-DATA_FILE = cwd+sep+'datasets'+sep+DATA_SET
-FEAT_FILE = cwd+sep+FEAT_SET
+
+DATA_SET = "train"
+
+DATA_FOLDER = cwd+sep+'datasets'+sep+DATA_SET
 
 # %% Data Loading
 if __name__ == "__main__":
@@ -74,30 +88,45 @@ if __name__ == "__main__":
         pooling="avg"
     )
 
-    # Load Image
-    dset = h5py.File(DATA_FILE, 'r')
-    NIR = dset['NIR']
-    RGB = dset['RGB']
-    Y = dset['GT']
-    X = np.concatenate([RGB, np.expand_dims(NIR, axis=-1)], axis=-1)
+    directory = os.fsencode(DATA_FOLDER)
 
-    # TODO: Do we do feature extraction on the whole image at once? LETS TRY
-    print('STARTING FEATURE EXTRACTION ...')
-    features = model.predict(X) #Returns the features as a np array.
-    #This still needs to be modified to have the parameters. See documentation. For example, predict with batches or not?
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".h5"):
+
+            # Load Image
+            dset = h5py.File(filename, 'r')
+            NIR = dset['NIR']
+            RGB = dset['RGB']
+            Y = dset['GT']
+            X = np.concatenate([RGB, np.expand_dims(NIR, axis=-1)], axis=-1)
+            model.input_shape = np.shape(X)
+
+            # TODO: Do we do feature extraction on the whole image at once? LETS TRY
+            print('STARTING FEATURE EXTRACTION ...')
+            features = model.predict(X)  # Returns the features as a np array.
+            # This still needs to be modified to have the parameters. See documentation. For example, predict with batches or not?
+
+            # TODO: Here the feature vectors should be stored and saved, in order to retrieve it later for the training.
+            #   The features are returned as a numpy array, and then stored as a hdf5 file.
+            #   QUESTION: do we mask before or after storage? The problem might be when storing everything together that
+            #   every batch has different feature vector lengths, because of varying number of good pixels. Solution might
+            #   be to add the mask before training.
+
+            FEAT_FILE = DATA_FOLDER+cwd+sep+filename[0:-3]+'_features.h5'
+            h5f_feat = h5py.File(FEAT_FILE, 'w')
+            h5f_feat.create_dataset('feature_vectors', data=features)
+            h5f_feat.close()
+            dset.close()
+            continue
+        else:
+            continue
+
+
 
 # %% WRITING FEATURES TO HDF5 FILE
 
-    # TODO: Here the feature vectors should be stored and saved, in order to retrieve it later for the training
-    #   You need to figure out how the NN outputs the features (probably as np arrays), and then you need to figure
-    #   how to save and store them. Make sure to consider how they will be retrieved for training.
-    #   QUESTION: do we mask before or after storage? The problem might be when storing everything together that
-    #   every batch has different feature vector lengths, because of varying number of good pixels. Solution might
-    #   be to add the mask before training.
 
-    h5f_feat = h5py.File(FEAT_FILE, 'w')
-    h5f_feat.create_dataset('feature_vectors', data=features)
-    h5f_feat.close()
 
     """
     IN CASE WE WANT TO CREATE A CSV FILE INSTEAD

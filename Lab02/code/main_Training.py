@@ -48,19 +48,37 @@ elif current_os == 'Windows':
     sep='\\'
 
 ## USER DEFINED PARAMETERS
+# FILE HIERARCHY INSTRUCTIONS
+#   ...cwd
+#       -\dataset
+#           -\train
+#               -merged_img_tile1.h5
+#               -merged_img_tile2.h5
+#               -merged_img_tile3.h5
+#               -merged_img_tile1_features.h5
+#               -merged_img_tile2_features.h5
+#               -merged_img_tile3_features.h5
+#           -\val
+#               -merged_img_tile4.h5
+#               -merged_img_tile4_features.h5
+#           -\test
+#               -merged_img_tile5.h5
+#               -merged_img_tile6.h5
+#               -merged_img_tile5_features.h5
+#               -merged_img_tile6_features.h5
+#       -main_Features.py
+#       -RMSE_MAE.py
+
 
 DATA_SET = "train" #Name of input image. IDEA: Send one image at a time, be it test or train. Means running code 4 times for training and 2 for test. Attempt to reduce memory usage
-VAL_SET = "..."
+VAL_SET = "val"
 
 # TODO: Select appropriate parameters. Do we do StandardScaler()?
 reg_mod = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
 
 ###
-FEAT_SET = "features_" + DATA_SET + ".h5"
-FEAT_FILE = cwd+sep+FEAT_SET
-DATA_SET = "dataset_" + DATA_SET + ".h5"
-DATA_FILE = cwd+sep+'datasets'+sep+DATA_SET
-VAL_FILE = cwd+sep+VAL_SET
+DATA_FOLDER = cwd+sep+'datasets'+sep+DATA_SET
+VAL_FOLDER = cwd+sep+VAL_SET
 
 # %% Data loading
 if __name__ == "__main__":
@@ -69,43 +87,73 @@ if __name__ == "__main__":
     # dealing with division by nan or 0
     np.seterr(divide='ignore', invalid='ignore')
 
-    # Load image
-    dset = h5py.File(DATA_FILE, 'r')
-    Y = dset['GT']
+    directory = os.fsencode(DATA_FOLDER)
 
-    # Load feature vectors
-    h5f_feat = h5py_File(FEAT_FILE, 'r')
-    X = h5f_feat['feature_vectors'][:]
+    if DATA_SET == 'train':
+        X = np.array()
+        Y = np.array()
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            if filename.endswith("features.h5"):
+                FEAT_FILE = DATA_FOLDER+sep+filename
+                DATA_FILE = DATA_FOLDER+sep+filename[0:-12]+'.h5'
 
-# %% Training
+                # Load image
+                dset = h5py.File(DATA_FILE, 'r')
 
-    reg_mod.fit(X, Y)
+                # Load feature vectors
+                h5f_feat = h5py_File(FEAT_FILE, 'r')
 
-    # Close h5 feat file
-    h5f_feat.close()
+                # TODO: Apply masks here if they are not already applied.
+
+                # TODO: Make sure this concatenation works with the dimensions of Y
+                Y = np.concatenate((Y, dset['GT']), axis=1)
+                X = np.concatenate((X, h5f_feat['feature_vectors'][:]), axis=1)
+
+                continue
+            else:
+                continue
+
+                # Fit the model/train the model
+                reg_mod.fit(X, Y)
+
+                # Close h5 feat file
+                h5f_feat.close()
 
 # %%
+    if DATA_SET == 'test':
+        VAL_FOLDER = DATA_FOLDER
 
-    now = datetime.now()
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith("features.h5"):
+            FEAT_FILE = DATA_FOLDER + sep + filename
+            DATA_FILE = DATA_FOLDER + sep + filename[0:-12] + '.h5'
 
-    print('VALIDATION STARTING ...')
+            # Load image
+            dset = h5py.File(DATA_FILE, 'r')
 
-    # Load validation image
-    dset = h5py.File(VAL_FILE, 'r')
-    GT = dset['GT']
+            # Load feature vectors
+            h5f_feat = h5py_File(FEAT_FILE, 'r')
 
-    # Load validation features
-    h5f_val = h5py_File(VAL_FILE, 'r')
-    val_features = h5f_val['feature_vectors'][:]
+            # TODO: Apply masks here if they are not already applied.
+
+            # TODO: Make sure this concatenation works with the dimensions of Y
+            Y = np.concatenate((Y, dset['GT']), axis=1)
+            X = np.concatenate((X, h5f_feat['feature_vectors'][:]), axis=1)
+
+            continue
+        else:
+            continue
 
 
     ## Predict the validation image
-    prediction = reg_mod.predict(val_features)
+    prediction = reg_mod.predict(X)
 
     ## Calculating RMSE
-    RMSE = calculate_RMSE(prediction, GT)
+    RMSE = calculate_RMSE(X, Y)
 
     ## Calculating MAE
-    MAE = calculate_MAE(prediction, GT)
+    MAE = calculate_MAE(X, Y)
 
     # TODO: Save predicitons, and metrics. Use them later to plot images etc.
