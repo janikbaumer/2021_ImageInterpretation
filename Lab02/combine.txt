@@ -1,0 +1,13 @@
+imagestack = np.stack(
+    [R, G, B, NIR],
+    axis=-1
+)
+
+meanRNIR = np.mean(np.array([imagestack[:,:,0], imagestack[:,:,3]]), axis=0)
+print(meanRNIR)
+print('')
+meanGNIR = np.mean(np.array([imagestack[:,:,1], imagestack[:,:,3]]), axis=0)
+print(meanGNIR)
+print('')
+meanBNIR = np.mean(np.array([imagestack[:,:,2], imagestack[:,:,3]]), axis=0)
+print(meanBNIR)
