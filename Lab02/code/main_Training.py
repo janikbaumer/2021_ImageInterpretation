@@ -78,7 +78,7 @@ reg_mod = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
 
 ###
 DATA_FOLDER = cwd+sep+'datasets'+sep+DATA_SET
-VAL_FOLDER = cwd+sep+VAL_SET
+VAL_FOLDER = cwd+sep+'datasets'+sep+VAL_SET
 
 # %% Data loading
 if __name__ == "__main__":
@@ -99,12 +99,19 @@ if __name__ == "__main__":
                 DATA_FILE = DATA_FOLDER+sep+filename[0:-12]+'.h5'
 
                 # Load image
-                dset = h5py.File(DATA_FILE, 'r')
+                #dset = h5py.File(DATA_FILE, 'r')
+                Y = np.load(DATA_FOLDER+sep+'label_tile_2.npy')
+                for_mask = np.load(DATA_FOLDER+sep+'RGBNIR_final_tile_2.npy')
+                for_mask = for_mask[:,:,0]
 
                 # Load feature vectors
                 h5f_feat = h5py_File(FEAT_FILE, 'r')
 
                 # TODO: Apply masks here if they are not already applied.
+
+                mask = for_mask==0
+                Y[mask]
+
 
                 # TODO: Make sure this concatenation works with the dimensions of Y
                 Y = np.concatenate((Y, dset['GT']), axis=1)

@@ -115,42 +115,49 @@ if __name__ == "__main__":
             X = np.concatenate([RGB, np.expand_dims(NIR, axis=-1)], axis=-1)
             """
             X = np.load(DATA_FOLDER+sep+filename)
-            print(np.isnan(X))
-            print(np.shape(X))
+            #print(np.isnan(X))
+            #print(np.shape(X))
 
             #plt.imshow(X_masked)
             #plt.show()
 
             meanRNIR = np.nanmean(np.array([X[:, :, 0], X[:, :, 3]]), axis=0)
-            print(meanRNIR)
-            print('')
+            #print(meanRNIR)
+            #print('')
             meanGNIR = np.nanmean(np.array([X[:, :, 1], X[:, :, 3]]), axis=0)
-            print(meanGNIR)
-            print('')
+            #print(meanGNIR)
+            #print('')
             meanBNIR = np.nanmean(np.array([X[:, :, 2], X[:, :, 3]]), axis=0)
-            print(meanBNIR)
+            #print(meanBNIR)
 
             X = np.stack([meanRNIR, meanGNIR, meanBNIR], axis=-1)
-            print(X)
+            #print(X)
 
-            mask = np.isnan(X[:, :, 0])
-            mean01 = np.mean(X[:, :, 0][np.logical_not(mask)])
-            mean02 = np.mean(X[:, :, 1][np.logical_not(mask)])
-            mean03 = np.mean(X[:, :, 2][np.logical_not(mask)])
+            mask01 = np.isnan(X[:, :, 0])
+            mask02 = np.isnan(X[:, :, 1])
+            mask03 = np.isnan(X[:, :, 2])
+            #mean01 = np.mean(X[:, :, 0][np.logical_not(mask01)], dtype=np.float64)
+            #mean02 = np.mean(X[:, :, 1][np.logical_not(mask02)], dtype=np.float64)
+            #mean03 = np.mean(X[:, :, 2][np.logical_not(mask03)], dtype=np.float64)
 
 
             RNIR = X[:,:,0]
             GNIR = X[:, :, 1]
             BNIR = X[:, :, 2]
 
-            RNIR[mask] = mean01
-            GNIR[mask] = mean02
-            BNIR[mask] = mean03
+            RNIR[mask01] = 0
+            GNIR[mask02] = 0
+            BNIR[mask03] = 0
 
             X = np.stack([RNIR, GNIR, BNIR], axis=-1)
             print(X)
 
             X_masked = X
+
+
+            #X_masked = (255*X_masked)/(np.amax(X_masked))
+
+            print(np.shape(X_masked))
             """
             # TODO: Apply masking
             mask = np.isnan(X)
@@ -174,7 +181,7 @@ if __name__ == "__main__":
                 include_top=False,
                 weights="imagenet",
                 input_tensor=None,
-                input_shape=np.shape(X_masked),
+                input_shape=(10980, 10980, 3),
                 pooling="avg"
             )
 
@@ -191,7 +198,7 @@ if __name__ == "__main__":
             #   every batch has different feature vector lengths, because of varying number of good pixels. Solution might
             #   be to add the mask before training.
 
-            FEAT_FILE = DATA_FOLDER+cwd+sep+filename[0:-4]+'_features.h5'
+            FEAT_FILE = DATA_FOLDER+sep+filename[0:-4]+'_features.h5'
             h5f_feat = h5py.File(FEAT_FILE, 'w')
             h5f_feat.create_dataset('feature_vectors', data=features)
             h5f_feat.close()
