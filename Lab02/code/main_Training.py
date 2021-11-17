@@ -70,13 +70,13 @@ elif current_os == 'Windows':
 #       -RMSE_MAE.py
 
 
-DATA_SET = "train" #Name of input image. IDEA: Send one image at a time, be it test or train. Means running code 4 times for training and 2 for test. Attempt to reduce memory usage
+DATA_SET = 'train' #Name of input image. IDEA: Send one image at a time, be it test or train. Means running code 4 times for training and 2 for test. Attempt to reduce memory usage
 VAL_SET = "val"
 
-# TODO: Select appropriate parameters. Do we do StandardScaler()?
+# Initializing the regressor
 reg_mod = make_pipeline(StandardScaler(), SGDRegressor(max_iter=1000, tol=1e-3))
 
-###
+### Folder paths
 DATA_FOLDER = cwd+sep+'datasets'+sep+DATA_SET
 VAL_FOLDER = cwd+sep+'datasets'+sep+VAL_SET
 
@@ -90,32 +90,33 @@ if __name__ == "__main__":
     directory = os.fsencode(DATA_FOLDER)
 
     if DATA_SET == 'train':
-        X = np.array()
-        Y = np.array()
+        #X = np.array()
+        #Y = np.array()
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
             if filename.endswith("features.h5"):
                 FEAT_FILE = DATA_FOLDER+sep+filename
-                DATA_FILE = DATA_FOLDER+sep+filename[0:-12]+'.h5'
+                DATA_FILE = DATA_FOLDER+sep+'RGNIR_final_tile_2.npy'
 
-                # Load image
+                # Load ground truth and mask
                 #dset = h5py.File(DATA_FILE, 'r')
                 Y = np.load(DATA_FOLDER+sep+'label_tile_2.npy')
                 for_mask = np.load(DATA_FOLDER+sep+'RGBNIR_final_tile_2.npy')
                 for_mask = for_mask[:,:,0]
 
                 # Load feature vectors
-                h5f_feat = h5py_File(FEAT_FILE, 'r')
+                with h5py.File(FEAT_FILE, 'r') as h5f_feat:
+                    X = h5f_feat['feature_vectors']
 
-                # TODO: Apply masks here if they are not already applied.
+                    # Apply mask to ground truth
+                    mask = for_mask==0
+                    Y[mask]
+                    ## Mask feature vectors...
 
-                mask = for_mask==0
-                Y[mask]
 
-
-                # TODO: Make sure this concatenation works with the dimensions of Y
-                Y = np.concatenate((Y, dset['GT']), axis=1)
-                X = np.concatenate((X, h5f_feat['feature_vectors'][:]), axis=1)
+                    # TODO: Make sure this concatenation works with the dimensions of Y
+                    Y = np.concatenate((Y, dset['GT']), axis=1)
+                    X = np.concatenate((X, h5f_feat['feature_vectors'][:]), axis=1)
 
                 continue
             else:
@@ -124,8 +125,6 @@ if __name__ == "__main__":
                 # Fit the model/train the model
                 reg_mod.fit(X, Y)
 
-                # Close h5 feat file
-                h5f_feat.close()
 
 # %%
     if DATA_SET == 'test':
@@ -139,15 +138,14 @@ if __name__ == "__main__":
 
             # Load image
             dset = h5py.File(DATA_FILE, 'r')
+            Y = dset['GT']
 
             # Load feature vectors
             h5f_feat = h5py_File(FEAT_FILE, 'r')
+            X = h5f_feat['feature_vectors']
 
-            # TODO: Apply masks here if they are not already applied.
+            # Mask data...
 
-            # TODO: Make sure this concatenation works with the dimensions of Y
-            Y = np.concatenate((Y, dset['GT']), axis=1)
-            X = np.concatenate((X, h5f_feat['feature_vectors'][:]), axis=1)
 
             continue
         else:
@@ -158,9 +156,9 @@ if __name__ == "__main__":
     prediction = reg_mod.predict(X)
 
     ## Calculating RMSE
-    RMSE = calculate_RMSE(X, Y)
+    RMSE = calculate_RMSE(prediction, Y)
 
     ## Calculating MAE
-    MAE = calculate_MAE(X, Y)
+    MAE = calculate_MAE(prediction, Y)
 
     # TODO: Save predicitons, and metrics. Use them later to plot images etc.
