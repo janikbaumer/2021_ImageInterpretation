@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-def set_cloudy_zero(RGB, NIR, CLD):
+def set_cloudy_nan(RGB, NIR, CLD):
     ### masking cloudy pixels (set them to NaN)
 
     # true if no cloud, false if cloud
@@ -18,6 +18,20 @@ def set_cloudy_zero(RGB, NIR, CLD):
 
     return RGB, NIR
 
+def set_nodata_nan(RGB, NIR):
+
+    # get pixels that have nodata over all four input channels
+    RGBNIR = np.concatenate([RGB, np.expand_dims(NIR, axis=-1)], axis=-1)
+    mask_nodata = (RGBNIR[:,:,0] == 0) & (RGBNIR[:,:,1] == 0) & (RGBNIR[:,:,2] == 0) & (RGBNIR[:,:,3] == 0)
+    print()
+    # np.where(mask_nodata[..., 0] == True & mask_nodata[...,1] == True & mask_nodata[..., 0] == True)
+    #for channel in
+
+    NIR_out = np.where((RGBNIR[:,:,0] == 0) & (RGBNIR[:,:,1] == 0) & (RGBNIR[:,:,2] == 0) & (RGBNIR[:,:,3] == 0), np.nan, NIR) #NIR[np.logical_not(mask_nodata)]
+    RGB_out = np.ndarray(RGB.shape)
+    for channel in range(RGB.shape[-1]):
+        RGB_out[:, :, channel] = np.where((RGBNIR[:,:,0] == 0) & (RGBNIR[:,:,1] == 0) & (RGBNIR[:,:,2] == 0) & (RGBNIR[:,:,3] == 0), np.nan, RGB[:, :, channel])
+    return RGB_out, NIR_out
 
 def remove_outliers(RGB, NIR):
     # NIR
@@ -25,7 +39,7 @@ def remove_outliers(RGB, NIR):
     NIR_mean = np.nanmean(NIR)
 
     # only limit upper bound, keep small values
-    NIR = np.where(NIR > (NIR_mean+2.5*NIR_std_dev), np.nan, NIR)
+    NIR = np.where(NIR > (NIR_mean+3*NIR_std_dev), np.nan, NIR)
     #NIR = np.where(NIR < (NIR_mean-3*NIR_std_dev), np.nan, NIR)
 
     # same for RGB (separately per channel)
@@ -89,7 +103,7 @@ for tile in [1]: #TILES_TRAIN:
     merged_GT = DATA_TRAIN['GT'][tile]
     merged_GT = np.where(merged_GT == -1, np.nan, merged_GT)  # set -1 in labels (GT) to nan
 
-    for orbit in range(1,2): #[1, 4]:  # iterate from 1 to n_orbits  # n_orbits:
+    for orbit in range(1, 3): #[1, 4]:  # iterate from 1 to n_orbits  # n_orbits:
         print(f'orbit: {orbit}')
         # todo: check if functions (masking, outlier) have to be called for previous and this (make sure not to run them twice if not needed)
 
@@ -104,12 +118,16 @@ for tile in [1]: #TILES_TRAIN:
         NIR_this = DATA_TRAIN[f'NIR_{tile}'][orbit, ...]
 
         # masking clouds
-        RGB_previous_msk, NIR_previous_msk = set_cloudy_zero(RGB_previous, NIR_previous, CLD_previous)
-        RGB_this_msk, NIR_this_msk = set_cloudy_zero(RGB_this, NIR_this, CLD_this)
+        RGB_previous_msk, NIR_previous_msk = set_cloudy_nan(RGB_previous, NIR_previous, CLD_previous)
+        RGB_this_msk, NIR_this_msk = set_cloudy_nan(RGB_this, NIR_this, CLD_this)
+
+        # masking no data in RGB and NIR
+        RGB_previous_m, NIR_previous_m = set_nodata_nan(RGB_previous_msk, NIR_previous_msk)
+        RGB_this_m, NIR_this_m = set_nodata_nan(RGB_this_msk, NIR_this_msk)
 
         # outlier removal for features
-        RGB_previous_masked, NIR_previous_masked = remove_outliers(RGB_previous_msk, NIR_previous_msk)
-        RGB_this_masked, NIR_this_masked = remove_outliers(RGB_this_msk, NIR_this_msk)
+        RGB_previous_masked, NIR_previous_masked = remove_outliers(RGB_previous_m, NIR_previous_m)
+        RGB_this_masked, NIR_this_masked = remove_outliers(RGB_this_m, NIR_this_m)
 
         RGB_previous_norm, NIR_previous_norm = normalize(RGB_previous_masked, NIR_previous_masked)
         RGB_this_norm, NIR_this_norm = normalize(RGB_this_masked, NIR_this_masked)
