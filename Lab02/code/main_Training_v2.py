@@ -11,9 +11,11 @@ import pickle as cPickle
 import platform
 import csv
 from time import time
+from joblib import dump, load
 
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import SGDRegressor
 
 import xgboost as xgb
 from sklearn.ensemble import RandomForestRegressor
@@ -174,8 +176,8 @@ alpha #L1 regularization on leaf weights. A large value leads to more regulariza
 n_estimators #number of trees you want to build.
 #subsample #percentage of samples used per tree. Low value can lead to underfitting.
 """
-models_list = ['XGBoost', 'RandomForest', 'DecisiontTree']
-select_model = 2
+models_list = ['XGBoost', 'RandomForest', 'DecisiontTree', 'SGDRegressor']
+select_model = 3
 
 if select_model==0:
     xgReg_params = {"objective": "reg:linear", 'colsample_bytree': 0.3, 'learning_rate': 0.1,
@@ -192,6 +194,10 @@ elif select_model==2:
     DecTree_params = {'criterion': 'squared-error', 'max_depth': 15}
     dec_tree_reg = DecisionTreeRegressor(DecTree_params)
     int_model = dec_tree_reg
+elif select_model==3:
+    SGD_params = {'loss': 'squared_error', 'penalty': 'l2', 'alpha': 0.0001, 'l1_ratio': 0.15,'max_iter': 1000}
+    SGD_reg = SGDRegressor()
+    int_model = MultiOutputRegressor(SGD_reg)
 
 ### Folder paths
 TRAIN_FOLDER = ROOT_PATH + sep + 'datasets' + sep + TRAIN_SET
@@ -232,6 +238,8 @@ if __name__ == "__main__":
                         #multiRegressor.fit(Z, Y)
                         #xg_reg.train(data_DMatrix, xgb_model=xg_reg)
 
+                        int_model.partial_fit(Z,Y)
+
                         #THis is implementing partial_fit, mor eor less. Now put this in the MultiOutputRegressor
                         """
                         model = xgb.train({
@@ -245,14 +253,12 @@ if __name__ == "__main__":
                         }, dtrain=data_DMatrix,
                             xgb_model=model)
                         """
-                        
-
-
-
-
+                dump(int_model, 'trained_model.joblib')
                 continue
             else:
                 continue
+
+
 
     # %% Model Evaluation
     if is_training == False:
@@ -274,7 +280,7 @@ if __name__ == "__main__":
 
             # Load data in optimized DMatrix
 
-            pred = multiRegressor.predict(X)
+            pred = int_model.predict(X)
 
 
 
