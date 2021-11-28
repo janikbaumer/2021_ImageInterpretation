@@ -77,8 +77,8 @@ from RMSE_MAE import calculate_MAE
 
 def plot_pred_gt(pred, Y, is_training):
 
-    Y = Y[400,:]
-    pred = pred[400,:]
+    pred = pred[2,...]
+    Y = Y[2,...]
 
     Y = np.reshape(Y, (128, 128))
     pred = np.reshape(pred, (128, 128))
@@ -141,7 +141,7 @@ elif current_os == 'Windows':
 ## USER DEFINED PARAMETERS
 # FILE HIERARCHY INSTRUCTIONS
 #   ...
-#       -\dataset
+#       -\datasets
 #           -\train
 #               -merged_img_tile1.h5
 #               -merged_img_tile2.h5
@@ -204,6 +204,8 @@ TRAIN_FOLDER = ROOT_PATH + sep + 'datasets' + sep + TRAIN_SET
 VAL_FOLDER = ROOT_PATH + sep + 'datasets' + sep + VAL_SET
 TEST_FOLDER = ROOT_PATH + sep + 'datasets' + sep + TEST_SET
 
+batchSize = 8
+
 # %% Model Fitting
 if __name__ == "__main__":
 
@@ -212,8 +214,15 @@ if __name__ == "__main__":
     # dealing with division by nan or 0
     np.seterr(divide='ignore', invalid='ignore')
 
+    for file in os.listdir(os.fsencode(ROOT_PATH)):
+        filename = os.fsdecode(file)
+        if filename.endswith('.joblib'):
+            model_exists = True
+            int_model = load(ROOT_PATH + sep + filename)
+            break
+
     # Model fitting
-    if is_training:
+    if is_training and not model_exists:
         directory = os.fsencode(TRAIN_FOLDER)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -221,38 +230,37 @@ if __name__ == "__main__":
                 FEAT_FILE = TRAIN_FOLDER + sep + filename
 
                 # Load feature vectors and GT
-                with h5py.File(FEAT_FILE, 'r') as h5f_feat:
+                print('Starting Training')
+                dset = Lab02FeatDset(FEAT_FILE)
 
-                    dset = Lab02FeatDset(FEAT_FILE)
+                dataLoader = DataLoader(dset, batch_size=batchSize, num_workers=0, shuffle=True)
+                model = None
+                for Z, Y in tqdm(dataLoader):
+                    Z = Z.numpy()
+                    Y = Y.numpy()
 
-                    dataLoader = DataLoader(dset, batch_size=8, num_workers=0, shuffle=True)
-                    model = None
-                    for Z, Y in tqdm(dataLoader):
-                        Z = Z.numpy()
-                        Y = Y.numpy()
+                    # TODO: Placeholder statements...
+                    #data_DMatrix = xgb.DMatrix(data=Z, label=Y[:,0])  # DMatrix type is optimized for XGBoost
 
-                        # TODO: Placeholder statements...
-                        #data_DMatrix = xgb.DMatrix(data=Z, label=Y[:,0])  # DMatrix type is optimized for XGBoost
+                    # Model fitting
+                    #multiRegressor.fit(Z, Y)
+                    #xg_reg.train(data_DMatrix, xgb_model=xg_reg)
 
-                        # Model fitting
-                        #multiRegressor.fit(Z, Y)
-                        #xg_reg.train(data_DMatrix, xgb_model=xg_reg)
+                    int_model.partial_fit(Z,Y)
 
-                        int_model.partial_fit(Z,Y)
-
-                        #THis is implementing partial_fit, mor eor less. Now put this in the MultiOutputRegressor
-                        """
-                        model = xgb.train({
-                            'learning_rate': 0.007,
-                            'update': 'refresh',
-                            'process_type': 'default',
-                            'refresh_leaf': True,
-                            # 'reg_lambda': 3,  # L2
-                            'reg_alpha': 3,  # L1
-                            'silent': False,
-                        }, dtrain=data_DMatrix,
-                            xgb_model=model)
-                        """
+                    #THis is implementing partial_fit, mor eor less. Now put this in the MultiOutputRegressor
+                    """
+                    model = xgb.train({
+                        'learning_rate': 0.007,
+                        'update': 'refresh',
+                        'process_type': 'default',
+                        'refresh_leaf': True,
+                        # 'reg_lambda': 3,  # L2
+                        'reg_alpha': 3,  # L1
+                        'silent': False,
+                    }, dtrain=data_DMatrix,
+                        xgb_model=model)
+                    """
                 dump(int_model, 'trained_model.joblib')
                 continue
             else:
@@ -273,29 +281,44 @@ if __name__ == "__main__":
         if filename.endswith("features.h5"):
             FEAT_FILE = VAL_FOLDER + sep + filename
 
-            # Load image
-            dset = h5py.File(FEAT_FILE, 'r')
-            Y = dset['Y']
-            X = dset['Z']
+            print('Performing predictions')
 
-            # Load data in optimized DMatrix
+            dset = Lab02FeatDset(FEAT_FILE)
 
-            pred = int_model.predict(X)
+            dataLoader = DataLoader(dset, batch_size=batchSize, num_workers=0, shuffle=False)
+            RMSE_tot = 0
+            MAE_tot = 0
+            pred_loop = 0
+            for Z, Y in tqdm(dataLoader):
+                Z = Z.numpy()
+                Y = Y.numpy()
 
+                pred = int_model.predict(Z)
 
+                shape = pred.shape
+                n = np.prod(np.asarray(shape))
 
+                RMSE = calculate_RMSE(pred, Y)
+                MAE = calculate_MAE(pred, Y)
+
+                RMSE_tot = np.sqrt(((RMSE_tot**2)*n + (RMSE**2)*n)/(2*n))
+                MAE_tot = (MAE_tot*n + MAE*n)/(2*n)
+
+                if pred_loop == 400:
+                    plot_pred_gt(pred, Y, is_training)
+                pred_loop += 1
 
             continue
         else:
             continue
 
-    plot_pred_gt(pred, Y, is_training)
+
 
     ## Calculating RMSE
-    RMSE = calculate_RMSE(pred, Y)
+    #RMSE = calculate_RMSE(pred, Y)
 
     ## Calculating MAE
-    MAE = calculate_MAE(pred, Y)
+    #MAE = calculate_MAE(pred, Y)
 
     t_1 = time()
     dt = t_1 - t_0
