@@ -2,6 +2,7 @@
 ### IMPORTS
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import h5py
 import torch
@@ -77,13 +78,13 @@ from RMSE_MAE import calculate_MAE
 
 def plot_pred_gt(pred, Y, is_training):
 
-    pred = pred[2,...]
-    Y = Y[2,...]
+    pred = pred[2, ...]
+    Y = Y[2, ...]
 
     Y = np.reshape(Y, (128, 128))
     pred = np.reshape(pred, (128, 128))
 
-    diff = Y - pred
+    diff = pred - Y
 
     if is_training:
         DATA_SET = 'validation'
@@ -92,35 +93,35 @@ def plot_pred_gt(pred, Y, is_training):
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
                             figsize=(30, 10), edgecolor='black',
                             tight_layout=True)
-    fig.suptitle('Plot prediction results on ' + DATA_SET, fontsize=28)
+    fig.suptitle('Plot prediction results on ' + DATA_SET, fontsize=34)
 
     # Plot the GT canopy heights
     divider1 = make_axes_locatable(ax1)
     cax1 = divider1.append_axes('right', size='5%', pad=0.05)  # Appending an axis for the color bar to the right
-    im1 = ax1.imshow(Y, cmap='inferno')  # Plotting GT in subplot
-    ax1.set_title(f'Ground truth', fontsize=14)  # Giving subplot title
+    im1 = ax1.imshow(Y, cmap='inferno', vmin=0, vmax=40)  # Plotting GT in subplot
+    ax1.set_title(f'Ground truth', fontsize=28)  # Giving subplot title
     cbar1 = fig.colorbar(im1, cax=cax1, orientation='vertical',
-                        ticks=[0.1, 30, 59.9])  # Creating colorbar on the appended axis
-    cbar1.set_label('True Canopy Height [m]', rotation=90)  # Label the colorbar
-    cbar1.ax.set_yticklabels(['0', '30', '60'])  # Set colorbar tick labels
+                         ticks=[0, 20, 40])  # Creating colorbar on the appended axis
+    cbar1.set_label('True Canopy Height [m]', rotation=90, fontsize=18)  # Label the colorbar
+    cbar1.ax.set_yticklabels(['0', '20', '40'])  # Set colorbar tick labels
     # Plot the predicted canopy heights
     divider2 = make_axes_locatable(ax2)
     cax2 = divider2.append_axes('right', size='5%', pad=0.05)  # Appending an axis for the color bar to the right
-    im2 = ax2.imshow(pred, cmap='inferno')  # Plotting GT in subplot
-    ax2.set_title(f'Predicted values', fontsize=14)  # Giving subplot title
+    im2 = ax2.imshow(pred, cmap='inferno', vmin=0, vmax=40)  # Plotting GT in subplot
+    ax2.set_title(f'Predicted values', fontsize=28)  # Giving subplot title
     cbar2 = fig.colorbar(im2, cax=cax2, orientation='vertical',
-                        ticks=[0.1, 30, 59.9])  # Creating colorbar on the appended axis
-    cbar2.set_label('Predicted Canopy Height [m]', rotation=90)  # Label the colorbar
-    cbar2.ax.set_yticklabels(['0', '30', '60'])  # Set colorbar tick labels
+                         ticks=[0, 20, 40])  # Creating colorbar on the appended axis
+    cbar2.set_label('Predicted Canopy Height [m]', rotation=90, fontsize=18)  # Label the colorbar
+    cbar2.ax.set_yticklabels(['0', '20', '40'])  # Set colorbar tick labels
     # Plot the true minus the predicted values
     divider3 = make_axes_locatable(ax3)
     cax3 = divider3.append_axes('right', size='5%', pad=0.05)  # Appending an axis for the color bar to the right
-    im3 = ax3.imshow(pred, cmap='bwr')  # Plotting GT in subplot
-    ax3.set_title(f'True minus predicted values', fontsize=14)  # Giving subplot title
+    im3 = ax3.imshow(diff, cmap='bwr')  # Plotting GT in subplot
+    ax3.set_title(f'Prediction minus true values', fontsize=28)  # Giving subplot title
     cbar3 = fig.colorbar(im3, cax=cax3, orientation='vertical',
-                        ticks=[0.1, 10, 19.9])  # Creating colorbar on the appended axis
-    cbar3.set_label('Difference [m]', rotation=90)  # Label the colorbar
-    cbar3.ax.set_yticklabels(['0', '10', '20'])  # Set colorbar tick labels
+                        ticks=[np.nanmin(diff), (np.nanmin(diff)+np.nanmax(diff))/2, np.nanmax(diff)])  # Creating colorbar on the appended axis
+    cbar3.set_label('Difference [m]', rotation=90, fontsize=18)  # Label the colorbar
+    cbar3.ax.set_yticklabels([f'{round(np.nanmin(diff), 1)}', f'{round((np.nanmin(pred)+np.nanmax(diff))/2, 1)}', f'{round(np.nanmax(diff),1)}'])  # Set colorbar tick labels
     plt.show()
 
 # %%
@@ -160,7 +161,7 @@ elif current_os == 'Windows':
 
 ROOT_PATH = r'C:\Users\Jor Fergus Dal\Desktop\Lav02_tiles_v1'
 
-is_training = True
+is_training = False
 
 TRAIN_SET = 'train'
 VAL_SET = 'val'
@@ -304,7 +305,7 @@ if __name__ == "__main__":
                 RMSE_tot = np.sqrt(((RMSE_tot**2)*n + (RMSE**2)*n)/(2*n))
                 MAE_tot = (MAE_tot*n + MAE*n)/(2*n)
 
-                if pred_loop == 400:
+                if pred_loop == 250 or pred_loop == 245 or pred_loop == 200:
                     plot_pred_gt(pred, Y, is_training)
                 pred_loop += 1
 
