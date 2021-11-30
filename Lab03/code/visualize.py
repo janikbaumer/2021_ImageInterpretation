@@ -3,8 +3,8 @@ import h5py
 from PIL import Image
 
 # Open hdf5 file
-testset = "/scratch2/tmehmet/imgint_testset_2.hdf5"
-testset = h5py.File(testset, "r")
+PATH = '../data/imgint_trainset.hdf5'
+testset = h5py.File(PATH, "r")
 
 # Read data shape and labels
 test_set_shape = testset["data"].shape
