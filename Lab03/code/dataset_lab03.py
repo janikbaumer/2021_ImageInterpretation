@@ -17,7 +17,7 @@ class Dataset(torch.utils.data.Dataset):
         self.num_samples = data_shape[0]
 
         if len(target_shape) == 3:
-            self.eval_mode=True
+            self.eval_mode = True
             self.num_pixels = target_shape[0]*target_shape[1]*target_shape[2]
         else:
             self.num_pixels = target_shape[0]
@@ -30,6 +30,8 @@ class Dataset(torch.utils.data.Dataset):
         print('Number of classes: ', self.n_classes)
         print('Temporal length: ', self.temporal_length)
         print('Number of channels: ', self.num_channel)
+        print(self.data['gt'].shape)
+        print(self.data['data'].shape)
 
     def return_labels(self):
         return self.data["gt"]
@@ -89,9 +91,9 @@ def plot_bands(X):
 
 if __name__ == "__main__":
 
-    data_path = "/scratch2/tmehmet/imgint_trainset_2.hdf5"
-    traindataset = Dataset(data_path)
-    X,y = traindataset[0]
+    data_path = "../data/imgint_trainset.hdf5"
+    traindataset = Dataset(data_path, time_downsample_factor=1)
+    X, y = traindataset[0]
     print(X.shape)
     print(y.shape)
 
@@ -106,5 +108,5 @@ if __name__ == "__main__":
 
     fig = plt.figure()
     plt.bar(label_names_sorted, pix_counts_sorted)
-    plt.xticks( rotation=90)
+    plt.xticks(rotation=90)
     plt.savefig("hist.png", dpi=300, format="png", bbox_inches='tight')
