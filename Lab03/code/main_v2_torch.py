@@ -1,24 +1,15 @@
-import numpy
-from keras.datasets import imdb
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers.embeddings import Embedding
-from keras.preprocessing import sequence
 from torch.utils.data import DataLoader
-from sklearn import model_selection
-
 import torch.utils.data
 import torch
+from torch import nn
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # fix random seed for reproducibility
-numpy.random.seed(42)
+np.random.seed(42)
 
-# load the dataset but only keep the top n words, zero the rest
 ##### CLASSES ######
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path, time_downsample_factor=1, num_channel=4):
@@ -26,9 +17,11 @@ class Dataset(torch.utils.data.Dataset):
         self.num_channel = num_channel
         self.time_downsample_factor = time_downsample_factor
         self.eval_mode = False
+
         # Open the data file
         self.data = h5py.File(path, "r", libver='latest', swmr=True)
 
+        # get shapes
         data_shape = self.data["data"].shape
         target_shape = self.data["gt"].shape
         self.num_samples = data_shape[0]
@@ -47,6 +40,7 @@ class Dataset(torch.utils.data.Dataset):
         print('Number of classes: ', self.n_classes)
         print('Temporal length: ', self.temporal_length)
         print('Number of channels: ', self.num_channel)
+
         print(self.data['gt'].shape)
         print(self.data['data'].shape)
 
@@ -110,7 +104,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 8
     traindataset = Dataset(DATA_PATH, time_downsample_factor=1)
     X_train, y_train = traindataset[0]  # X and y have type torch.Tensor / X: torch.Size([71,4]) and y: torch.Size([]), so y has no (empty) size
-    #X_train, X_val, y_train, y_val = model_selection.train_test_split(X, y, test_size=0.2, random_state=42)
+
     print('shape of X: ', X_train.shape)
     print('shape of y: ', y_train.shape)
 
@@ -133,8 +127,11 @@ if __name__ == "__main__":
     n_pxl = traindataset.num_pixels
     n_chn = traindataset.num_channel
     n_classes = traindataset.n_classes
+    temp_len = traindataset.temporal_length
     print()
 
+
+    '''
     # create the model
     embedding_vector_length = 32
     model = Sequential()
@@ -149,6 +146,39 @@ if __name__ == "__main__":
     model.build()
     print(model.summary())
     print()
+    '''
+
+    data = torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+    print("Data: ", data.shape, "\n\n", data)
+    ###################### OUTPUT ######################
+
+    #Data:
+    #tensor([ 1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.])
+    #Data Shape:
+    #torch.Size([20])
+
+
+    # Number of features used as input. (Number of columns)
+    INPUT_SIZE = 1
+    # Number of previous time stamps taken into account.
+    SEQ_LENGTH = temp_len
+    # Number of features in last hidden state ie. number of output time-
+    # steps to predict. See image below for more clarity.
+    HIDDEN_SIZE = 2  # todo: vary
+    # Number of stacked rnn layers.
+    NUM_LAYERS = 1  # todo: vary
+    # We have total of 20 rows in our input.
+    # We divide the input into 4 batches where each batch has only 1
+    # row. Each row corresponds to a sequence of length 5.
+    ### BATCH_SIZE = 4
+
+    # Initialize the RNN.
+    rnn = nn.RNN(input_size=INPUT_SIZE, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS, batch_first=True)
+    # input size : (batch, seq_len, input_size)
+    inputs = data.view(BATCH_SIZE, SEQ_LENGTH, INPUT_SIZE)
+    # out shape = (batch, seq_len, num_directions * hidden_size)
+    # h_n shape  = (num_layers * num_directions, batch, hidden_size)
+    out, h_n = rnn(inputs)
 
 
     for X_train, y_train in tqdm(dloader):
@@ -161,11 +191,11 @@ if __name__ == "__main__":
         #print(X.shape, Y.shape)
         #print()
         # todo work with input and output (ev sep into train and validation)
-
+    '''
     # Final evaluation of the model
     scores = model.evaluate(X_val, y_val, verbose=0)
     print("Accuracy: %.2f%%" % (scores[1]*100))
-
+    '''
 
 '''      
 #Custom class for training
