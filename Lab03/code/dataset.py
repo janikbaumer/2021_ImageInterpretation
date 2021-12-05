@@ -2,6 +2,7 @@ import torch.utils.data
 import torch
 import numpy as np
 import h5py
+import matplotlib.pyplot as plt
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path, time_downsample_factor=1, num_channel=4):
@@ -57,10 +58,6 @@ class Dataset(torch.utils.data.Dataset):
         X = X * 1e-4
 
         return X.float(), target.long()
-
-
-
-import matplotlib.pyplot as plt
 
 colordict = {'B04': '#a6cee3', 'NDWI': '#1f78b4', 'NDVI': '#b2df8a', 'RATIOVVVH': '#33a02c', 'B09': '#fb9a99',
              'B8A': '#e31a1c', 'IRECI': '#fdbf6f', 'B07': '#ff7f00', 'B12': '#cab2d6', 'B02': '#6a3d9a', 'B03': '#0f1b5f',

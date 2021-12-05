@@ -1,8 +1,8 @@
 import h5py
 import numpy
 
-PATH_OLD = '../data/imgint_trainset.hdf5'
-PATH_NEW = '../data/imgint_trainset_reduced.hdf5'
+PATH_OLD = '../data/imgint_trainset_v2.hdf5'
+PATH_NEW = '../data/imgint_trainset_v2_reduced.hdf5'
 
 file_old = h5py.File(PATH_OLD, 'r')
 # for checking (later) that dimensions match (in new dataset)

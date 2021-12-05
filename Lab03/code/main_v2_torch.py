@@ -108,8 +108,8 @@ if __name__ == "__main__":
     print('shape of X: ', X_train.shape)
     print('shape of y: ', y_train.shape)
 
-    gt_list = traindataset.return_labels()
-    labels, pix_counts = np.unique(gt_list, return_counts=True)
+    gt_list = traindataset.return_labels()  # returns list of labels
+    labels, pix_counts = np.unique(gt_list, return_counts=True)  # get list of labels
 
     inds = pix_counts.argsort()
     pix_counts_sorted = pix_counts[inds]
@@ -131,6 +131,7 @@ if __name__ == "__main__":
     print()
 
 
+
     '''
     # create the model
     embedding_vector_length = 32
@@ -148,25 +149,23 @@ if __name__ == "__main__":
     print()
     '''
 
+    '''
     data = torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
     print("Data: ", data.shape, "\n\n", data)
+    
     ###################### OUTPUT ######################
 
     #Data:
-    #tensor([ 1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.])
+    torch.tensor([ 1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.])
     #Data Shape:
     #torch.Size([20])
+    '''
 
+    INPUT_SIZE = n_pxl  # Number of features used as input. (Number of columns)
+    SEQ_LENGTH = temp_len  # Number of previous time stamps taken into account.
 
-    # Number of features used as input. (Number of columns)
-    INPUT_SIZE = 1
-    # Number of previous time stamps taken into account.
-    SEQ_LENGTH = temp_len
-    # Number of features in last hidden state ie. number of output time-
-    # steps to predict. See image below for more clarity.
-    HIDDEN_SIZE = 2  # todo: vary
-    # Number of stacked rnn layers.
-    NUM_LAYERS = 1  # todo: vary
+    HIDDEN_SIZE = 2  # Number of features in last hidden state ie. number of output time-steps to predict. See image below for more clarity. # todo: vary
+    NUM_LAYERS = 1  # Number of stacked rnn layers.  # todo: vary
     # We have total of 20 rows in our input.
     # We divide the input into 4 batches where each batch has only 1
     # row. Each row corresponds to a sequence of length 5.
@@ -176,16 +175,17 @@ if __name__ == "__main__":
     rnn = nn.RNN(input_size=INPUT_SIZE, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS, batch_first=True)
     # input size : (batch, seq_len, input_size)
     inputs = data.view(BATCH_SIZE, SEQ_LENGTH, INPUT_SIZE)
+
     # out shape = (batch, seq_len, num_directions * hidden_size)
     # h_n shape  = (num_layers * num_directions, batch, hidden_size)
-    out, h_n = rnn(inputs)
-
+    # out, h_n = rnn(inputs)
+    print()
 
     for X_train, y_train in tqdm(dloader):
         # convert tensor to numpy
-        X_train = X_train.numpy()
-        y_train = y_train.numpy()
-        model.fit(X_train, y_train, epochs=3, batch_size=64)
+        X_train
+        y_train
+        rnn.fit(X_train, y_train, epochs=3, batch_size=64)
         # X has shape torch.Size([BATCH_SIZE, TEMPORAL_LENGTH, NUM_CHANNELS])
         # Y has shape torch.Size([BATCH_SIZE])
         #print(X.shape, Y.shape)
