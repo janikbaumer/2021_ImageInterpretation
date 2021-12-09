@@ -28,9 +28,10 @@ from dataset import colordict, plotbands, label_IDs, label_names, mapping_dict
 torch.manual_seed(1)
 np.random.seed(42)
 
-#DOWNLOAD_MNIST = True   # set to True if haven't download the data
 
 '''
+#DOWNLOAD_MNIST = True   # set to True if haven't download the data
+
 # Mnist digital dataset
 train_data = dsets.MNIST(
     root='./mnist/',
@@ -50,16 +51,20 @@ plt.show()
 
 
 ############# LOAD DATA #############
-PATH_TRAIN = '../data/imgint_trainset_v2.hdf5'
-PATH_TEST = '../data/imgint_testset_v2.hdf5'
+PATH_TRAIN = '../data/imgint_trainset_v3.hdf5'
+PATH_VAL = '../data/imgint_validationset_v3.hdf5'
+PATH_TEST = '../data/imgint_testset_v3.hdf5'
+
 traindataset = Dataset(PATH_TRAIN)
+validationdataset = Dataset(PATH_VAL)
 testdataset = Dataset(PATH_TEST)
 
+'''
 ### show some test shapes
 X, y = traindataset[0]
 print(X.shape)
 print(y.shape)
-
+'''
 
 ### some stuff from TA
 gt_list = traindataset.return_labels()
@@ -75,22 +80,23 @@ print(label_names_sorted)
 
 
 ### some stuff from myself
-n_pxl = traindataset.num_pixels
-n_chn = traindataset.num_channel
-n_classes = traindataset.n_classes
-temp_len = traindataset.temporal_length
+n_pxl_train = traindataset.num_pixels
+n_chn_train = traindataset.num_channel
+n_classes_train = traindataset.n_classes
+temp_len_train = traindataset.temporal_length
 
 
 ###########################################
 ########### HYPERPARAMETERS ###############
 ###########################################
 
-EPOCHS = 1               # train the training data n times, to save time, we just train 1 epoch
+EPOCHS = 1                  # train the training data n times, to save time, we just train 1 epoch
 BATCH_SIZE = 64
-TIME_STEP = temp_len  # todo get rid of magic number         # rnn time step / image height
-INPUT_SIZE = 4  # todo get rid of magic number      # rnn input size / image width
-LR = 0.001               # learning rate
+TIME_STEP = temp_len_train  # todo get rid of magic number         # rnn time step / image height
+INPUT_SIZE = 4              # todo get rid of magic number      # rnn input size / image width
+LR = 0.001                  # learning rate
 NUM_LAYERS = 1
+MODEL_TYPE = 'LSTM'         # GRU or LSTM
 
 '''
 ### some plotting
@@ -102,6 +108,7 @@ plt.savefig("hist_test.png", dpi=300, format="png", bbox_inches='tight')
 
 # Data Loader for easy mini-batch return in training
 train_loader = DataLoader(dataset=traindataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(dataset=validationdataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(dataset=testdataset, batch_size=BATCH_SIZE, shuffle=True)
 # Data Loader for easy mini-batch return in training - FROM DEMO
 # train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
@@ -112,19 +119,10 @@ test_loader = DataLoader(dataset=testdataset, batch_size=BATCH_SIZE, shuffle=Tru
 # test_x = test_data.test_data.type(torch.FloatTensor)[:2000]/255.   # shape (2000, 28, 28) value in range(0,1)
 # test_y = test_data.test_labels.numpy()[:2000]    # covert to numpy array
 
-
-class RNN(nn.Module):
+class GRU(nn.Module):
     def __init__(self):
-        super(RNN, self).__init__()
+        super(GRU, self).__init__()
 
-        '''
-        self.rnn = nn.LSTM(         # if use nn.RNN(), it hardly learns
-            input_size=INPUT_SIZE,
-            hidden_size=64,         # rnn hidden unit
-            num_layers=NUM_LAYERS,           # number of rnn layer
-            batch_first=True,       # input & output will has batch size as 1s dimension. e.g. (batch, time_step, input_size)
-        )
-        '''
         self.rnn = nn.GRU(
             input_size=INPUT_SIZE,
             hidden_size=64,
@@ -132,10 +130,7 @@ class RNN(nn.Module):
             batch_first=True,
         )
 
-        #self.rnn = nn.GRU()
-
-
-        self.out = nn.Linear(64, n_classes)
+        self.out = nn.Linear(64, n_classes_train)
 
     def forward(self, x):
         # x shape (batch, time_step, input_size)
@@ -150,53 +145,96 @@ class RNN(nn.Module):
         return out
 
 
-rnn = RNN()
-print(rnn)
+class LSTM(nn.Module):
+    def __init__(self):
+        super(LSTM, self).__init__() # call init function from parent class
 
-optimizer = torch.optim.Adam(rnn.parameters(), lr=LR)   # optimize all cnn parameters
+        self.rnn = nn.LSTM(         # if use nn.RNN(), it hardly learns
+            input_size=INPUT_SIZE,
+            hidden_size=64,         # rnn hidden unit
+            num_layers=NUM_LAYERS,  # number of rnn layer
+            batch_first=True,       # input & output will has batch size as 1s dimension. e.g. (batch, time_step, input_size)
+        )
+
+        self.out = nn.Linear(64, n_classes_train)
+
+    def forward(self, x):
+        # x shape (batch, time_step, input_size)
+        # r_out shape (batch, time_step, output_size)
+        # h_n shape (n_layers, batch, hidden_size)
+        # h_c shape (n_layers, batch, hidden_size)
+        #r_out, (h_n, h_c) = self.rnn(x, None)   # None represents zero initial hidden state
+
+
+        # todo define some fancy h_0 and c_0, then change None (2nd arg in self.rnn(x,None) to h_0, c_0 in first 'loop', resp. to h_n and c_n in other 'loops'
+        r_out, (h_n, c_n) = self.rnn(x, None)  # r_out has shape [64, 71, 64]
+
+        # choose r_out at the last time step
+        out = self.out(r_out[:, -1, :])  # apply the Linear classification layer in the end, take last temporal element
+        return out
+
+if MODEL_TYPE == 'GRU':
+    model = GRU()
+else:
+    model = LSTM()
+
+print(model)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=0.001)   # optimize all cnn parameters
 loss_func = nn.CrossEntropyLoss()      # the target label is not one-hotted
 
-# training and testing
+model.train()
+
+print('TRAINING STARTING ...')
+
+# training
 for epoch in range(EPOCHS):
-    nsamples_break = 5000
+    nsamples_break = 5#000
     for step, (b_x_train, b_y_train) in tqdm(enumerate(train_loader)):    # gives batch data
         b_y_train.apply_(mapping_dict.get)
         if step > nsamples_break:
             break
         b_x_train = b_x_train.view(-1, TIME_STEP, INPUT_SIZE)       # reshape x to (batch, time_step, input_size), # the size -1 is inferred from other dimensions
 
-        output_train = rnn(b_x_train)                               # rnn output (of batch of traindata)
+        output_train = model(b_x_train)                               # rnn output (of batch of traindata)
         loss = loss_func(output_train, b_y_train)                   # cross entropy loss
+        # set gradients to zero for this step (not to have residuals from last loop)
         optimizer.zero_grad()                           # clear gradients for this training step
+        #
         loss.backward()                                 # backpropagation, compute gradients
         optimizer.step()                                # apply gradients
 
         if step % 50 == 0:
             print('Epoch: ', epoch, '| train loss: %.4f' % loss.data.numpy())
 
+print('MODEL TRAINED SUCCESSFULLY')
 
-    accuracies = []
-    cm_total = np.zeros((n_classes, n_classes))
-    for step, (b_x_test, b_y_test) in tqdm(enumerate(test_loader)):
-        b_x_test = b_x_test.view(-1, 71, 4)
 
-        output_test = rnn(b_x_test)                   # (samples, time_step, input_size)
-        pred_y = torch.max(output_test, 1)[1].data.numpy()
 
-        accuracy = float((pred_y == b_y_test.data.numpy().flatten()).astype(int).sum()) / float(b_y_test.data.numpy().flatten().size)
-        print('Epoch: ', epoch, 'test accuracy: %.2f' % accuracy)
-        accuracies.append(accuracy)
+accuracies_test = []
+cm_total = np.zeros((n_classes_train, n_classes_train))
+print('VALIDATION STARTING')
+model.eval()  # same as model.train(mode=False)
+for step, (b_x_test, b_y_test) in tqdm(enumerate(test_loader)):
+    b_x_test = b_x_test.view(-1, 71, 4)
 
-        # confusion matrix
-        cm = confusion_matrix(b_y_test.data.numpy().reshape(-1), pred_y, labels=list(range(n_classes)))
-        cm_total = cm_total + cm
-        # todo: collect all accuracies over this loop (test_loader) -> compute average (or more generally: call aggregation function) over all acc. of this loop
-        #  get aggregated accuracy score
-        #  or other metrics (confusion matrix etc)
-        #  start comparing values (different model / different time_sample_factors / ... )
-    avg_acc = np.mean(accuracies)
-    print('avg accuracy: \n', avg_acc)
-    print('cm total: \n', cm_total)
+    output_test = model(b_x_test)                   # (samples, time_step, input_size)
+    pred_y = torch.max(output_test, 1)[1].data.numpy()
+
+    accuracy = float((pred_y == b_y_test.data.numpy().flatten()).astype(int).sum()) / float(b_y_test.data.numpy().flatten().size)
+    print('Epoch: ', epoch, 'test accuracy: %.2f' % accuracy)
+    accuracies_test.append(accuracy)
+
+    # confusion matrix
+    cm = confusion_matrix(b_y_test.data.numpy().reshape(-1), pred_y, labels=list(range(n_classes_train)))
+    cm_total = cm_total + cm
+    # todo: collect all accuracies over this loop (test_loader) -> compute average (or more generally: call aggregation function) over all acc. of this loop
+    #  get aggregated accuracy score
+    #  or other metrics (confusion matrix etc)
+    #  start comparing values (different model / different time_sample_factors / ... )
+avg_acc_test = np.mean(accuracies_test)
+print('avg accuracy: \n', avg_acc_test)
+print('cm total: \n', cm_total)
 '''
 # print 10 predictions from test data
 test_output = rnn(test_x[:10].view(-1, 28, 28))

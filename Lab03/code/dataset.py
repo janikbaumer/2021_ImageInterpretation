@@ -46,6 +46,7 @@ class Dataset(torch.utils.data.Dataset):
         # Convert numpy array to torch tensor
         X = torch.from_numpy(X)
         target = torch.from_numpy(np.array(target)).float()
+        #target.apply_(mapping_dict.get)
 
         # if self.eval_mode:
         #     X = X.view()
@@ -65,10 +66,10 @@ colordict = {'B04': '#a6cee3', 'NDWI': '#1f78b4', 'NDVI': '#b2df8a', 'RATIOVVVH'
              'B11': '#007c30', 'NDVVVH': '#00778a', 'BRIGHTNESS': '#000000', 'B06': '#0f1b5f'}
 plotbands = ["B02", "B03", "B04", "B08"]
 
-label_IDs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+label_IDs_old = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
           26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 51]
 
-label_names = ['Unknown', 'Apples', 'Beets', 'Berries', 'Biodiversity area', 'Buckwheat',
+label_names_old = ['Unknown', 'Apples', 'Beets', 'Berries', 'Biodiversity area', 'Buckwheat',
                'Chestnut', 'Chicory', 'Einkorn wheat', 'Fallow', 'Field bean', 'Forest',
                'Gardens', 'Grain', 'Hedge', 'Hemp', 'Hops', 'Legumes', 'Linen', 'Lupine',
                'Maize', 'Meadow', 'Mixed crop', 'Multiple', 'Mustard', 'Oat', 'Pasture', 'Pears',
@@ -77,10 +78,19 @@ label_names = ['Unknown', 'Apples', 'Beets', 'Berries', 'Biodiversity area', 'Bu
                'Tobacco', 'Tree crop', 'Vegetables', 'Vines', 'Wheat', 'Winter barley',
                'Winter rapeseed', 'Winter wheat']
 
+dictionary_toDel = dict(zip(label_IDs_old, label_names_old))
+
+label_IDs = [21, 51, 20, 27, 38, 49, 50, 45, 30, 48, 42, 46, 36]
+lst_0_12 = list(range(len(label_IDs)))
+label_names = ['Meadow', 'Winter wheat', 'Maize', 'Pasture', 'Sugar beet', 'Winter barley', 'Winter rapeseed', 'Vegetables', 'Potatoes',
+      'Wheat', 'Sunflowers', 'Vines', 'Spelt']
+mapping_dict = dict(zip(label_IDs, lst_0_12))
+
+
 def plot_bands(X):
     x = np.arange(X.shape[0])
     for i, band in enumerate(plotbands):
-        plt.plot(x, X[:,i])
+        plt.plot(x, X[:, i])
 
     plt.savefig("bands.png", dpi=300, format="png", bbox_inches='tight')
 
@@ -103,10 +113,11 @@ if __name__ == "__main__":
     labels_sorted = labels[inds]
     print(labels_sorted)
 
+
     label_names_sorted = [label_names[label_IDs.index(x)] for x in labels_sorted]
     print(label_names_sorted)
 
     fig = plt.figure()
     plt.bar(label_names_sorted, pix_counts_sorted)
-    plt.xticks( rotation=90)
+    plt.xticks(rotation=90)
     plt.savefig("hist_test.png", dpi=300, format="png", bbox_inches='tight')
