@@ -24,6 +24,7 @@ from aggregate import calc_metrics
 # import variables
 from dataset import colordict, plotbands, label_IDs, label_names, mapping_dict
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+
 # fix random seed for reproducibility
 torch.manual_seed(1)
 np.random.seed(42)
@@ -96,6 +97,9 @@ BATCH_SIZE = 64
 HIDDEN_SIZE = 128           # try 64 and 128
 
 NSAMPLES_BREAK = 150
+
+# Single GPU or CPU
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 '''
 ### some plotting
