@@ -6,8 +6,8 @@ import os.path
 
 import torch
 from torch import nn
-import torchvision.datasets as dsets
-import torchvision.transforms as transforms
+#import torchvision.datasets as dsets
+#import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import torch.utils.data
@@ -21,9 +21,11 @@ from dataset import Dataset
 from dataset import plot_bands
 from sklearn.metrics import confusion_matrix
 from aggregate import calc_metrics
+from time import time
 # import variables
 from dataset import colordict, plotbands, label_IDs, label_names, mapping_dict
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+
 
 # fix random seed for reproducibility
 torch.manual_seed(1)
@@ -40,9 +42,9 @@ plt.show()
 '''
 
 ############# LOAD DATA #############
-PATH_TRAIN = '../data/imgint_trainset_v3.hdf5'
-PATH_VAL = '../data/imgint_validationset_v3.hdf5'
-PATH_TEST = '../data/imgint_testset_v3.hdf5'
+PATH_TRAIN = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_trainset_v3.hdf5'
+PATH_VAL = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_validationset_v3.hdf5'
+PATH_TEST = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_testset_v3.hdf5'
 traindataset = Dataset(PATH_TRAIN)
 validationdataset = Dataset(PATH_VAL)
 testdataset = Dataset(PATH_TEST)
@@ -77,6 +79,8 @@ n_chn_val = validationdataset.num_channel
 n_classes_val = validationdataset.n_classes
 temp_len_val = validationdataset.temporal_length
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 ###########################################
 ########### HYPERPARAMETERS ###############
 ###########################################
@@ -91,15 +95,12 @@ PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templenght_{TIM
 
 # not to vary
 LR = 0.001
-INPUT_SIZE = 4              # todo get rid of magic number      # rnn input size / image width
+INPUT_SIZE = 4
 EPOCHS = 1                  # train the training data n times, to save time, we just train 1 epoch
 BATCH_SIZE = 64
-HIDDEN_SIZE = 128           # try 64 and 128
+HIDDEN_SIZE = 128           # ev try 64 and 128
 
 NSAMPLES_BREAK = 150
-
-# Single GPU or CPU
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 '''
 ### some plotting
@@ -212,6 +213,7 @@ else:
     model.train()
 
     print('TRAINING STARTING ...')
+    t_train_start = time()
 
     # training
     for epoch in range(EPOCHS):
@@ -235,6 +237,9 @@ else:
 
             if step % 50 == 0:
                 print('Epoch: ', epoch, '| train loss: %.4f' % loss.data.numpy())
+    t_train_end = time()
+    t_train = t_train_end-t_train_start
+    print('training time in s: ', t_train)
 
     print('MODEL TRAINED SUCCESSFULLY, SAVING THE MODEL...')
     torch.save(obj=model, f=PATH_MODEL)
@@ -248,6 +253,7 @@ model.eval()  # same as model.train(mode=False)
 # lists to store each predictions and labels in a list
 pred_arr = np.empty(0)
 target_arr = np.empty(0)
+t_val_start = time()
 for step, (b_x_val, b_y_val) in tqdm(enumerate(val_loader)):
     b_x_val.to(device)
     b_y_val.to(device)
@@ -264,6 +270,9 @@ for step, (b_x_val, b_y_val) in tqdm(enumerate(val_loader)):
 
 
 # after this loop, we have pred_arr, target_arr with all values from all batches (so from whole validation set)
+t_val_end = time()
+t_val = t_val_start-t_val_end
+print('validation time: ', t_val)
 
 confusion_matrix = confusion_matrix(y_true=target_arr, y_pred=pred_arr) #  , labels=list(range(n_classes_val)))
 precision, recall, f1, accuracy = get_metrics(y_true=target_arr, y_pred=pred_arr)
