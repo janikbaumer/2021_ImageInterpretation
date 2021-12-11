@@ -31,6 +31,9 @@ from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_sc
 torch.manual_seed(1)
 np.random.seed(42)
 
+# set device for pytorch
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 '''
 # plot one example
@@ -40,21 +43,46 @@ plt.imshow(train_data.train_data[0].numpy(), cmap='gray')
 plt.title('%i' % train_data.train_labels[0])
 plt.show()
 '''
-
-############# LOAD DATA #############
-PATH_TRAIN = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_trainset_v3.hdf5'
-PATH_VAL = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_validationset_v3.hdf5'
-PATH_TEST = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_testset_v3.hdf5'
-traindataset = Dataset(PATH_TRAIN, time_downsample_factor=4)
-validationdataset = Dataset(PATH_VAL, time_downsample_factor=4)
-testdataset = Dataset(PATH_TEST, time_downsample_factor=4)
-
 '''
 ### show some test shapes
 X, y = traindataset[0]
 print(X.shape)
 print(y.shape)
 '''
+'''
+### some plotting
+fig = plt.figure()
+plt.bar(label_names_sorted, pix_counts_sorted)
+plt.xticks( rotation=90)
+plt.savefig("hist_test.png", dpi=300, format="png", bbox_inches='tight')
+'''
+
+###########################################
+########### HYPERPARAMETERS ###############
+###########################################
+
+# to vary
+MODEL_TYPE = 'GRU'          # try GRU or LSTM or RNN
+NUM_LAYERS = 2              # try 1 and 2
+TDS_FACTOR = 4              # time downsampling factor, try 1 (no downsampling), 4, 16
+
+# not to vary
+LR = 0.001
+INPUT_SIZE = 4
+EPOCHS = 3                  # train the training data n times, to save time, we just train 1 epoch
+BATCH_SIZE = 64
+HIDDEN_SIZE = 128           # ev try 64 and 128
+
+NSAMPLES_BREAK = 50
+
+
+############# LOAD DATA #############
+PATH_TRAIN = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_trainset_v3.hdf5'
+PATH_VAL = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_validationset_v3.hdf5'
+PATH_TEST = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_testset_v3.hdf5'
+traindataset = Dataset(PATH_TRAIN, time_downsample_factor=TDS_FACTOR)
+validationdataset = Dataset(PATH_VAL, time_downsample_factor=TDS_FACTOR)
+testdataset = Dataset(PATH_TEST, time_downsample_factor=TDS_FACTOR)
 
 ### some stuff from TA
 gt_list = traindataset.return_labels()
@@ -68,7 +96,7 @@ print(labels_sorted)
 label_names_sorted = [label_names[label_IDs.index(x)] for x in labels_sorted]
 print(label_names_sorted)
 
-### some stuff from myself
+### get some parameters
 n_pxl_train = traindataset.num_pixels
 n_chn_train = traindataset.num_channel
 n_classes_train = traindataset.n_classes
@@ -79,36 +107,9 @@ n_chn_val = validationdataset.num_channel
 n_classes_val = validationdataset.n_classes
 temp_len_val = validationdataset.temporal_length
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-###########################################
-########### HYPERPARAMETERS ###############
-###########################################
-
-
-# to vary
-MODEL_TYPE = 'GRU'          # try GRU or LSTM ev RNN
-NUM_LAYERS = 1              # try 1 and 2
 TIME_STEP = temp_len_train  # try time sample factor 16, 4, 1
-
 PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templength_{TIME_STEP}.pkl'
-
-# not to vary
-LR = 0.001
-INPUT_SIZE = 4
-EPOCHS = 3                 # train the training data n times, to save time, we just train 1 epoch
-BATCH_SIZE = 64
-HIDDEN_SIZE = 128           # ev try 64 and 128
-
-NSAMPLES_BREAK = 150
-
-'''
-### some plotting
-fig = plt.figure()
-plt.bar(label_names_sorted, pix_counts_sorted)
-plt.xticks( rotation=90)
-plt.savefig("hist_test.png", dpi=300, format="png", bbox_inches='tight')
-'''
 
 # Data Loader for easy mini-batch return in training
 train_loader = DataLoader(dataset=traindataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -122,6 +123,32 @@ test_loader = DataLoader(dataset=testdataset, batch_size=BATCH_SIZE, shuffle=Tru
 # test_data = dsets.MNIST(root='./mnist/', train=False, transform=transforms.ToTensor())
 # test_x = test_data.test_data.type(torch.FloatTensor)[:2000]/255.   # shape (2000, 28, 28) value in range(0,1)
 # test_y = test_data.test_labels.numpy()[:2000]    # covert to numpy array
+
+
+class RNN(nn.Module):
+    def __init__(self):
+        super(RNN, self).__init__()
+
+        self.rnn = nn.RNN(
+            input_size=INPUT_SIZE,
+            hidden_size=HIDDEN_SIZE,
+            num_layers=NUM_LAYERS,
+            batch_first=True,
+        )
+
+        self.out = nn.Linear(HIDDEN_SIZE, n_classes_train)
+
+    def forward(self, x):
+        # x shape (batch, time_step, input_size)
+        # r_out shape (batch, time_step, output_size)
+        # h_n shape (n_layers, batch, hidden_size)
+        # h_c shape (n_layers, batch, hidden_size)
+        #r_out, (h_n, h_c) = self.rnn(x, None)   # None represents zero initial hidden state
+        r_out, h_n = self.rnn(x)  # final hidden state for each layer
+
+        # choose r_out at the last time step
+        out = self.out(h_n[-1, :, :])  # takes final hidden state of all layers
+        return out
 
 class GRU(nn.Module):
     def __init__(self):
@@ -201,8 +228,11 @@ else:
     if MODEL_TYPE == 'GRU':
         model = GRU()
         model = model.to(device)
-    else:
+    elif MODEL_TYPE == 'LSTM':
         model = LSTM()
+        model = model.to(device)
+    else:
+        model = RNN()
         model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=0.001)   # optimize all cnn parameters
