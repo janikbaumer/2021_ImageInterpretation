@@ -91,7 +91,7 @@ MODEL_TYPE = 'GRU'          # try GRU or LSTM ev RNN
 NUM_LAYERS = 1              # try 1 and 2
 TIME_STEP = temp_len_train  # try time sample factor 16, 4, 1
 
-PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templenght_{TIME_STEP}.pkl'
+PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templength_{TIME_STEP}.pkl'
 
 # not to vary
 LR = 0.001
