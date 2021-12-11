@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
+import math
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path, time_downsample_factor=1, num_channel=4):
@@ -25,7 +26,8 @@ class Dataset(torch.utils.data.Dataset):
 
         label_idxs = np.unique(self.data["gt"])
         self.n_classes = len(label_idxs)
-        self.temporal_length = data_shape[-2]//time_downsample_factor
+        #self.temporal_length = data_shape[-2]//time_downsample_factor
+        self.temporal_length = math.ceil(data_shape[-2]/time_downsample_factor)
 
         print('Number of pixels: ', self.num_pixels)
         print('Number of classes: ', self.n_classes)
