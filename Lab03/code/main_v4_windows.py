@@ -45,9 +45,9 @@ plt.show()
 PATH_TRAIN = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_trainset_v3.hdf5'
 PATH_VAL = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_validationset_v3.hdf5'
 PATH_TEST = r'C:\Users\jbaumer\PycharmProjects\2021_ImageInterpretation\Lab03\data\imgint_testset_v3.hdf5'
-traindataset = Dataset(PATH_TRAIN)
-validationdataset = Dataset(PATH_VAL)
-testdataset = Dataset(PATH_TEST)
+traindataset = Dataset(PATH_TRAIN, time_downsample_factor=4)
+validationdataset = Dataset(PATH_VAL, time_downsample_factor=4)
+testdataset = Dataset(PATH_TEST, time_downsample_factor=4)
 
 '''
 ### show some test shapes
@@ -88,7 +88,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # to vary
 MODEL_TYPE = 'GRU'          # try GRU or LSTM ev RNN
-NUM_LAYERS = 2              # try 1 and 2
+NUM_LAYERS = 1              # try 1 and 2
 TIME_STEP = temp_len_train  # try time sample factor 16, 4, 1
 
 PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templenght_{TIME_STEP}.pkl'
@@ -96,7 +96,7 @@ PATH_MODEL = f'../models/model_{MODEL_TYPE}_nlayers_{NUM_LAYERS}_templenght_{TIM
 # not to vary
 LR = 0.001
 INPUT_SIZE = 4
-EPOCHS = 1                  # train the training data n times, to save time, we just train 1 epoch
+EPOCHS = 3                 # train the training data n times, to save time, we just train 1 epoch
 BATCH_SIZE = 64
 HIDDEN_SIZE = 128           # ev try 64 and 128
 
@@ -194,17 +194,20 @@ if os.path.isfile(PATH_MODEL):
     # load trained model
     print('MODEL ALREADY EXISTS, LOADING TRAINED MODEL...')
     model = torch.load(f=PATH_MODEL)
-    model.to(device)
+    model = model.to(device)
 
 else:
     print('MODEL DOES NOT YET EXISTS, TRAINING MODEL FROM SCRATCH')
     if MODEL_TYPE == 'GRU':
-        model = GRU().to(device)
+        model = GRU()
+        model = model.to(device)
     else:
-        model = LSTM().to(device)
+        model = LSTM()
+        model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=0.001)   # optimize all cnn parameters
-    loss_func = nn.CrossEntropyLoss().to(device)      # the target label is not one-hotted
+    loss_func = nn.CrossEntropyLoss()                                             # the target label is not one-hotted
+    loss_func = loss_func.to(device)
     print(model)
     print(optimizer)
     print(loss_func)
@@ -218,17 +221,17 @@ else:
     # training
     for epoch in range(EPOCHS):
         for step, (b_x_train, b_y_train) in tqdm(enumerate(train_loader)):    # gives batch data
-            b_x_train.to(device)
-            b_y_train.to(device)
+            b_x_train = b_x_train.to(device)
+            b_y_train = b_y_train.to(device)
 
-            if step > NSAMPLES_BREAK:
-                break
+            #if step > NSAMPLES_BREAK:
+            #    break
 
             # set gradients to zero for this step (not to have residuals from last loop)
             optimizer.zero_grad()                           # clear gradients for this training step
 
             b_y_train.apply_(mapping_dict.get)
-            b_x_train = b_x_train.view(-1, TIME_STEP, INPUT_SIZE)       # reshape x to (batch, time_step, input_size), # the size -1 is inferred from other dimensions
+            b_x_train = b_x_train.view(-1, temp_len_train, INPUT_SIZE)       # reshape x to (batch, time_step, input_size), # the size -1 is inferred from other dimensions
 
             output_train = model(b_x_train)                             # rnn output (of batch of traindata)
             loss = loss_func(output_train, b_y_train)                   # cross entropy loss
@@ -255,12 +258,13 @@ pred_arr = np.empty(0)
 target_arr = np.empty(0)
 t_val_start = time()
 for step, (b_x_val, b_y_val) in tqdm(enumerate(val_loader)):
-    b_x_val.to(device)
-    b_y_val.to(device)
+    b_x_val = b_x_val.to(device)
+    b_y_val = b_y_val.to(device)
 
-    if step > NSAMPLES_BREAK:
-        break
+    #if step > NSAMPLES_BREAK:
+    #    break
 
+    b_y_val.apply_(mapping_dict.get)
     b_x_val = b_x_val.view(-1, temp_len_val, INPUT_SIZE)
 
     output_val = model(b_x_val)                                 # (samples, time_step, input_size)
@@ -271,7 +275,7 @@ for step, (b_x_val, b_y_val) in tqdm(enumerate(val_loader)):
 
 # after this loop, we have pred_arr, target_arr with all values from all batches (so from whole validation set)
 t_val_end = time()
-t_val = t_val_start-t_val_end
+t_val = t_val_end-t_val_start
 print('validation time: ', t_val)
 
 confusion_matrix = confusion_matrix(y_true=target_arr, y_pred=pred_arr) #  , labels=list(range(n_classes_val)))
@@ -301,3 +305,4 @@ print(pred_y, 'prediction number')
 print(test_y[:10], 'real number')
 '''
 """
+print()
