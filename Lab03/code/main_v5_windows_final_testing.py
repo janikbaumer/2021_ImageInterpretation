@@ -160,12 +160,6 @@ for MODEL_TYPE in MODELS_LST:
                     # train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
 
 
-                    # convert test data into Variable, pick 2000 samples to speed up testing - FROM DEMO
-                    # test_data = dsets.MNIST(root='./mnist/', train=False, transform=transforms.ToTensor())
-                    # test_x = test_data.test_data.type(torch.FloatTensor)[:2000]/255.   # shape (2000, 28, 28) value in range(0,1)
-                    # test_y = test_data.test_labels.numpy()[:2000]    # covert to numpy array
-
-
                     class RNN(nn.Module):
                         def __init__(self):
                             super(RNN, self).__init__()
@@ -229,9 +223,6 @@ for MODEL_TYPE in MODELS_LST:
                             )
 
                             self.out = nn.Linear(HIDDEN_SIZE, n_classes_train)
-
-                            #self.hn = torch.randn(2, 3, 20)
-                            #self.cn = torch.randn(2, 4, 30)
 
                         def forward(self, x):
                             # x shape (batch, time_step, input_size)
@@ -340,20 +331,22 @@ for MODEL_TYPE in MODELS_LST:
                         b_x_test = b_x_test.view(-1, temp_len_val, INPUT_SIZE)
                         b_y_test = b_y_test.view(-1)
 
-                        """
+
+
+
                         batch_mask = (b_y_test != 0)  # shape 24*24*batch_size (here: 36864)
                         batch_mask = batch_mask.numpy()
                         b_x_test = b_x_test.numpy()
                         b_y_test = b_y_test.numpy()
                         b_x_test = np.delete(b_x_test, np.logical_not(batch_mask), axis=0)
-                        #b_y_test = np.delete(b_y_test, batch_mask, axis=0)
+                        b_y_test = np.delete(b_y_test, batch_mask, axis=0)
 
                         b_x_test = torch.from_numpy(b_x_test)
                         b_y_test = b_y_test[batch_mask]
                         b_y_test = torch.from_numpy(b_y_test)
 
                         print()
-                        """
+
 
 
                         # write fct, input pred_y, bool mask, output pred_y original - for loop through mask, if mask is has val true, then get index and add zero at this index to pred_y
@@ -399,29 +392,4 @@ for MODEL_TYPE in MODELS_LST:
                     np.savetxt(fname=f'{BASE_PATH_RESULTS}_recalls.txt', X=recall)
 
                     print()
-
-
-                    """
-                        accuracy = float((pred_y == b_y_test.data.numpy().flatten()).astype(int).sum()) / float(b_y_test.data.numpy().flatten().size)
-                        print('Epoch: ', epoch, 'test accuracy: %.2f' % accuracy)
-                        accuracies_test.append(accuracy)
-                    
-                        # confusion matrix # old (imported function renamed)
-                        cm = confusion_matrix(b_y_test.data.numpy().reshape(-1), pred_y, labels=list(range(n_classes_train)))
-                        cm_total = cm_total + cm
-                        # todo: collect all accuracies over this loop (test_loader) -> compute average (or more generally: call aggregation function) over all acc. of this loop
-                        #  get aggregated accuracy score
-                        #  or other metrics (confusion matrix etc)
-                        #  start comparing values (different model / different time_sample_factors / ... )
-                    avg_acc_test = np.mean(accuracies_test)
-                    print('avg accuracy: \n', avg_acc_test)
-                    print('cm total: \n', cm_total)
-                    '''
-                    # print 10 predictions from test data
-                    test_output = rnn(test_x[:10].view(-1, 28, 28))
-                    pred_y = torch.max(test_output, 1)[1].data.numpy()
-                    print(pred_y, 'prediction number')
-                    print(test_y[:10], 'real number')
-                    '''
-                    """
 print()
